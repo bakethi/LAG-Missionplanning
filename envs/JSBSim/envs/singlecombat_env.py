@@ -13,6 +13,11 @@ class SingleCombatEnv(BaseEnv):
         # Env-Specific initialization here!
         assert len(self.agents.keys()) == 2, f"{self.__class__.__name__} only supports 1v1 scenarios!"
         self.init_states = None
+        self.airbase = {
+            "position": [120.0, 60.0, 0.0],  # Example:  Replace with desired coordinates
+            "hp": 100,
+            "destroyed": False
+        }
 
     def load_task(self):
         taskname = getattr(self.config, 'task', None)

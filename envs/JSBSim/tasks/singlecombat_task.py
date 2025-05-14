@@ -129,6 +129,14 @@ class SingleCombatTask(BaseTask):
         norm_obs[13] = R / 10000
         norm_obs[14] = side_flag
         norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
+        # Airbase relative position (example - adjust as needed)
+        airbase = env.airbase
+        agent_position = env.agents[agent_id].get_position()
+        norm_obs[15] = (airbase["position"][0] - agent_position[0]) # Delta Longitude
+        norm_obs[16] = (airbase["position"][1] - agent_position[1]) # Delta Latitude
+        norm_obs[17] = int(airbase["destroyed"]) # 1 if destroyed, 0 if not
+
+        return norm_obs
         return norm_obs
 
     def normalize_action(self, env, agent_id, action):
@@ -154,38 +162,73 @@ class SingleCombatTask(BaseTask):
         return super().reset(env)
 
     def step(self, env):
-        def _orientation_fn(AO):
-            if AO >= 0 and AO <= 0.5236:  # [0, pi/6]
-                return 1 - AO / 0.5236
-            elif AO >= -0.5236 and AO <= 0: # [-pi/6, 0]
-                return 1 + AO / 0.5236
-            return 0
-        def _distance_fn(R):
-            if R <=1: # [0, 1km]
-                return 1
-            elif R > 1 and R <= 3: # [1km, 3km]
-                return (3 - R) / 2.
-            else:
+            def _orientation_fn(AO):
+                if AO >= 0 and AO <= 0.5236:  # [0, pi/6]
+                    return 1 - AO / 0.5236
+                elif AO >= -0.5236 and AO <= 0: # [-pi/6, 0]
+                    return 1 + AO / 0.5236
                 return 0
-        if self.use_artillery:
+            def _distance_fn(R):
+                if R <=1: # [0, 1km]
+                    return 1
+                elif R > 1 and R <= 3: # [1km, 3km]
+                    return (3 - R) / 2.
+                else:
+                    return 0
+            done = False # Initialize done flag
+            if self.use_artillery:
+                for agent_id in env.agents.keys():
+                    ego_feature = np.hstack([env.agents[agent_id].get_position(),
+                                            env.agents[agent_id].get_velocity()])
+                    for enm in env.agents[agent_id].enemies:
+                        if enm.is_alive:
+                            enm_feature = np.hstack([enm.get_position(),
+                                                    enm.get_velocity()])
+                            AO, _, R = get_AO_TA_R(ego_feature, enm_feature)
+                            enm.bloods -= _orientation_fn(AO) * _distance_fn(R/1000)
+                            # if agent_id == 'A0100' and enm.uid == 'B0100':
+                            #     print(f"AO: {AO * 180 / np.pi}, {_orientation_fn(AO)}, dis:{R/1000}, {_distance_fn(R/1000)}")
+
+            # Airbase interaction logic starts here
+            airbase = env.airbase  # Get the airbase object from the environment
             for agent_id in env.agents.keys():
-                ego_feature = np.hstack([env.agents[agent_id].get_position(),
-                                        env.agents[agent_id].get_velocity()])
-                for enm in env.agents[agent_id].enemies:
-                    if enm.is_alive:
-                        enm_feature = np.hstack([enm.get_position(),
-                                                enm.get_velocity()])
-                        AO, _, R = get_AO_TA_R(ego_feature, enm_feature)
-                        enm.bloods -= _orientation_fn(AO) * _distance_fn(R/1000)
-                        # if agent_id == 'A0100' and enm.uid == 'B0100':
-                        #     print(f"AO: {AO * 180 / np.pi}, {_orientation_fn(AO)}, dis:{R/1000}, {_distance_fn(R/1000)}")
+                agent = env.agents[agent_id]
+                agent_position = agent.get_position()  # [lon_deg, lat_deg, alt_m]
+
+                # Calculate distance to airbase (simplified)
+                dx = (agent_position[0] - airbase["position"][0]) * 111000 * np.cos(np.radians(agent_position[1]))
+                dy = (agent_position[1] - airbase["position"][1]) * 111000
+                dist = np.sqrt(dx**2 + dy**2)
+
+                if dist < 5000:  # 5km attack range (adjust as needed)
+                    airbase["hp"] -= 10  # Damage per step
+                    if airbase["hp"] <= 0:
+                        airbase["destroyed"] = True
+                        airbase["hp"] = 0
+                        print("Airbase Destroyed!")
+                        done = True  # Terminate episode when airbase is destroyed
+            
+            return done # Return the done flag
 
     def get_reward(self, env, agent_id, info=...):
-        if self._agent_die_flag.get(agent_id, False):
-            return 0.0, info
-        else:
-            self._agent_die_flag[agent_id] = not env.agents[agent_id].is_alive
-            return super().get_reward(env, agent_id, info=info)
+            reward = 0.0  # Initialize reward
+            
+            if self._agent_die_flag.get(agent_id, False):
+                return 0.0, info
+            else:
+                self._agent_die_flag[agent_id] = not env.agents[agent_id].is_alive
+                reward += super().get_reward(env, agent_id, info=info)  # Add existing rewards
+            
+            # Airbase reward logic
+            if not env.airbase["destroyed"]:
+                if env.airbase["hp"] < 100:  # Airbase has taken damage
+                    reward += 0.1  # Small reward for damage
+                if env.airbase["hp"] == 0 and not self._airbase_destroyed:  # Airbase was just destroyed
+                    reward += 10.0  # Large reward for destruction
+                    self._airbase_destroyed = True
+                    print("Airbase destroyed reward given!")
+        
+            return reward, info
 
     def load_agent(self, name):
         if name == 'pursue':
