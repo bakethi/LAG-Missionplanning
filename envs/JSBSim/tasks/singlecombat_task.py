@@ -35,7 +35,7 @@ class SingleCombatTask(BaseTask):
 
     @property
     def num_agents(self) -> int:
-        return 2 if not self.use_baseline else 1
+        return 1 if not self.use_baseline else 1
 
     def load_variables(self):
         self.state_var = [
@@ -72,72 +72,75 @@ class SingleCombatTask(BaseTask):
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(15,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(18,))
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle
         self.action_space = spaces.MultiDiscrete([41, 41, 41, 30])
 
     def get_obs(self, env, agent_id):
-        """
-        Convert simulation states into the format of observation_space
+            """
+            Convert simulation states into the format of observation_space
 
-        ------
-        Returns: (np.ndarray)
-        - ego info
-            - [0] ego altitude           (unit: 5km)
-            - [1] ego_roll_sin
-            - [2] ego_roll_cos
-            - [3] ego_pitch_sin
-            - [4] ego_pitch_cos
-            - [5] ego v_body_x           (unit: mh)
-            - [6] ego v_body_y           (unit: mh)
-            - [7] ego v_body_z           (unit: mh)
-            - [8] ego_vc                 (unit: mh)
-        - relative enm info
-            - [9] delta_v_body_x         (unit: mh)
-            - [10] delta_altitude        (unit: km)
-            - [11] ego_AO                (unit: rad) [0, pi]
-            - [12] ego_TA                (unit: rad) [0, pi]
-            - [13] relative distance     (unit: 10km)
-            - [14] side_flag             1 or 0 or -1
-        """
-        norm_obs = np.zeros(15)
-        ego_obs_list = np.array(env.agents[agent_id].get_property_values(self.state_var))
-        enm_obs_list = np.array(env.agents[agent_id].enemies[0].get_property_values(self.state_var))
-        # (0) extract feature: [north(km), east(km), down(km), v_n(mh), v_e(mh), v_d(mh)]
-        ego_cur_ned = LLA2NEU(*ego_obs_list[:3], env.center_lon, env.center_lat, env.center_alt)
-        enm_cur_ned = LLA2NEU(*enm_obs_list[:3], env.center_lon, env.center_lat, env.center_alt)
-        ego_feature = np.array([*ego_cur_ned, *(ego_obs_list[6:9])])
-        enm_feature = np.array([*enm_cur_ned, *(enm_obs_list[6:9])])
-        # (1) ego info normalization
-        norm_obs[0] = ego_obs_list[2] / 5000            # 0. ego altitude   (unit: 5km)
-        norm_obs[1] = np.sin(ego_obs_list[3])           # 1. ego_roll_sin
-        norm_obs[2] = np.cos(ego_obs_list[3])           # 2. ego_roll_cos
-        norm_obs[3] = np.sin(ego_obs_list[4])           # 3. ego_pitch_sin
-        norm_obs[4] = np.cos(ego_obs_list[4])           # 4. ego_pitch_cos
-        norm_obs[5] = ego_obs_list[9] / 340             # 5. ego v_body_x   (unit: mh)
-        norm_obs[6] = ego_obs_list[10] / 340            # 6. ego v_body_y   (unit: mh)
-        norm_obs[7] = ego_obs_list[11] / 340            # 7. ego v_body_z   (unit: mh)
-        norm_obs[8] = ego_obs_list[12] / 340            # 8. ego vc   (unit: mh)
-        # (2) relative info w.r.t enm state
-        ego_AO, ego_TA, R, side_flag = get2d_AO_TA_R(ego_feature, enm_feature, return_side=True)
-        norm_obs[9] = (enm_obs_list[9] - ego_obs_list[9]) / 340
-        norm_obs[10] = (enm_obs_list[2] - ego_obs_list[2]) / 1000
-        norm_obs[11] = ego_AO
-        norm_obs[12] = ego_TA
-        norm_obs[13] = R / 10000
-        norm_obs[14] = side_flag
-        norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
-        # Airbase relative position (example - adjust as needed)
-        airbase = env.airbase
-        agent_position = env.agents[agent_id].get_position()
-        norm_obs[15] = (airbase["position"][0] - agent_position[0]) # Delta Longitude
-        norm_obs[16] = (airbase["position"][1] - agent_position[1]) # Delta Latitude
-        norm_obs[17] = int(airbase["destroyed"]) # 1 if destroyed, 0 if not
+            ------
+            Returns: (np.ndarray)
+            - ego info
+                - [0] ego altitude           (unit: 5km)
+                - [1] ego_roll_sin
+                - [2] ego_roll_cos
+                - [3] ego_pitch_sin
+                - [4] ego_pitch_cos
+                - [5] ego v_body_x           (unit: mh)
+                - [6] ego v_body_y           (unit: mh)
+                - [7] ego v_body_z           (unit: mh)
+                - [8] ego_vc                 (unit: mh)
+            - relative enm info (REMOVED/MODIFIED for single agent)
+                - [9] delta_v_body_x         (unit: mh)
+                - [10] delta_altitude        (unit: km)
+                - [11] ego_AO                (unit: rad) [0, pi]
+                - [12] ego_TA                (unit: rad) [0, pi]
+                - [13] relative distance     (unit: 10km)
+                - [14] side_flag             1 or 0 or -1
+            - airbase info
+                - [15] delta_long
+                - [16] delta_lat
+                - [17] airbase_destroyed
+            """
+            norm_obs = np.zeros(18) # Modified observation space size
+            ego_obs_list = np.array(env.agents[agent_id].get_property_values(self.state_var))
+            #enm_obs_list = np.array(env.agents[agent_id].enemies[0].get_property_values(self.state_var)) # Removed enemy
 
-        return norm_obs
-        return norm_obs
+            # (1) ego info normalization
+            norm_obs[0] = ego_obs_list[2] / 5000            # 0. ego altitude   (unit: 5km)
+            norm_obs[1] = np.sin(ego_obs_list[3])           # 1. ego_roll_sin
+            norm_obs[2] = np.cos(ego_obs_list[3])           # 2. ego_roll_cos
+            norm_obs[3] = np.sin(ego_obs_list[4])           # 3. ego_pitch_sin
+            norm_obs[4] = np.cos(ego_obs_list[4])           # 4. ego_pitch_cos
+            norm_obs[5] = ego_obs_list[9] / 340             # 5. ego v_body_x   (unit: mh)
+            norm_obs[6] = ego_obs_list[10] / 340            # 6. ego v_body_y   (unit: mh)
+            norm_obs[7] = ego_obs_list[11] / 340            # 7. ego v_body_z   (unit: mh)
+            norm_obs[8] = ego_obs_list[12] / 340            # 8. ego vc   (unit: mh)
+            
+            # (2) relative info w.r.t enm state (REMOVED/MODIFIED)
+            # ego_AO, ego_TA, R, side_flag = get2d_AO_TA_R(ego_feature, enm_feature, return_side=True)
+            # norm_obs[9] = (enm_obs_list[9] - ego_obs_list[9]) / 340
+            # norm_obs[10] = (enm_obs_list[2] - ego_obs_list[2]) / 1000
+            # norm_obs[11] = ego_AO
+            # norm_obs[12] = ego_TA
+            # norm_obs[13] = R / 10000
+            # norm_obs[14] = side_flag
+            norm_obs[9:15] = 0 # set enemy observation to zero
+
+            # Airbase relative position
+            airbase = env.airbase
+            agent_position = env.agents[agent_id].get_position()
+            norm_obs[15] = (airbase["position"][0] - agent_position[0]) # Delta Longitude
+            norm_obs[16] = (airbase["position"][1] - agent_position[1]) # Delta Latitude
+            norm_obs[17] = int(airbase["destroyed"]) # 1 if destroyed, 0 if not
+
+            norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
+            return norm_obs
+
 
     def normalize_action(self, env, agent_id, action):
         """Convert discrete action index into continuous value.
@@ -162,51 +165,25 @@ class SingleCombatTask(BaseTask):
         return super().reset(env)
 
     def step(self, env):
-            def _orientation_fn(AO):
-                if AO >= 0 and AO <= 0.5236:  # [0, pi/6]
-                    return 1 - AO / 0.5236
-                elif AO >= -0.5236 and AO <= 0: # [-pi/6, 0]
-                    return 1 + AO / 0.5236
-                return 0
-            def _distance_fn(R):
-                if R <=1: # [0, 1km]
-                    return 1
-                elif R > 1 and R <= 3: # [1km, 3km]
-                    return (3 - R) / 2.
-                else:
-                    return 0
             done = False # Initialize done flag
-            if self.use_artillery:
-                for agent_id in env.agents.keys():
-                    ego_feature = np.hstack([env.agents[agent_id].get_position(),
-                                            env.agents[agent_id].get_velocity()])
-                    for enm in env.agents[agent_id].enemies:
-                        if enm.is_alive:
-                            enm_feature = np.hstack([enm.get_position(),
-                                                    enm.get_velocity()])
-                            AO, _, R = get_AO_TA_R(ego_feature, enm_feature)
-                            enm.bloods -= _orientation_fn(AO) * _distance_fn(R/1000)
-                            # if agent_id == 'A0100' and enm.uid == 'B0100':
-                            #     print(f"AO: {AO * 180 / np.pi}, {_orientation_fn(AO)}, dis:{R/1000}, {_distance_fn(R/1000)}")
+            # Airbase interaction logic
+            airbase = env.airbase
+            agent_id = list(env.agents.keys())[0] # Get the single agent's ID
+            agent = env.agents[agent_id]
+            agent_position = agent.get_position()
 
-            # Airbase interaction logic starts here
-            airbase = env.airbase  # Get the airbase object from the environment
-            for agent_id in env.agents.keys():
-                agent = env.agents[agent_id]
-                agent_position = agent.get_position()  # [lon_deg, lat_deg, alt_m]
+            # Calculate distance to airbase (simplified)
+            dx = (agent_position[0] - airbase["position"][0]) * 111000 * np.cos(np.radians(agent_position[1]))
+            dy = (agent_position[1] - airbase["position"][1]) * 111000
+            dist = np.sqrt(dx**2 + dy**2)
 
-                # Calculate distance to airbase (simplified)
-                dx = (agent_position[0] - airbase["position"][0]) * 111000 * np.cos(np.radians(agent_position[1]))
-                dy = (agent_position[1] - airbase["position"][1]) * 111000
-                dist = np.sqrt(dx**2 + dy**2)
-
-                if dist < 5000:  # 5km attack range (adjust as needed)
-                    airbase["hp"] -= 10  # Damage per step
-                    if airbase["hp"] <= 0:
-                        airbase["destroyed"] = True
-                        airbase["hp"] = 0
-                        print("Airbase Destroyed!")
-                        done = True  # Terminate episode when airbase is destroyed
+            if dist < 5000:  # 5km attack range (adjust as needed)
+                airbase["hp"] -= 10  # Damage per step
+                if airbase["hp"] <= 0:
+                    airbase["destroyed"] = True
+                    airbase["hp"] = 0
+                    print("Airbase Destroyed!")
+                    done = True  # Terminate episode when airbase is destroyed
             
             return done # Return the done flag
 
