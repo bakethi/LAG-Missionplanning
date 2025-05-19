@@ -545,8 +545,7 @@ class StaticSimulator(BaseSimulator):
             lon = init_state.get('ic_long_gc_deg', origin[0])
             lat = init_state.get('ic_lat_geod_deg', origin[1])
             alt = init_state.get('ic_h_sl_ft', origin[2]) * 0.3048  # ft to m
-            from ..utils.utils import LLA2NEU
-            self._position = LLA2NEU(lon, lat, alt, *origin)
+            self._position = np.array([lon, lat, alt])
         else:
             self._position = np.zeros(3)
     def run(self, **kwargs):
