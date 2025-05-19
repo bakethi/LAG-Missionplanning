@@ -559,5 +559,5 @@ class StaticSimulator(BaseSimulator):
             # Render the static base to the ACMI file
             pos = self._position
             print(pos)
-            return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Name={self.model},Color={self.color},Type={self.type}"
+            return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Length=1000.0,Width=1000.0,Height=1000.0,Name={self.model},Color={self.color},Type={self.type}"
         return ""
