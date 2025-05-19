@@ -540,6 +540,7 @@ class StaticSimulator(BaseSimulator):
         self.model = model
         self.type = type
         self.origin = origin
+        self.rendered = False
         # Set position from init_state if provided
         if init_state is not None:
             lon = init_state.get('ic_long_gc_deg', origin[0])
@@ -553,6 +554,10 @@ class StaticSimulator(BaseSimulator):
     def close(self):
         pass
     def log(self):
-        # Example log for ACMI
-        pos = self._position
-        return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Type={self.type},Color={self.color},Name={self.model}"
+        if not self.rendered:
+            self.rendered = True
+            # Render the static base to the ACMI file
+            pos = self._position
+            print(pos)
+            return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Name={self.model},Color={self.color},Type={self.type}"
+        return ""
