@@ -33,14 +33,14 @@ aircraft_configs: {
 
 # enemy base config 
 static_base_configs: {
-  100000000: {
+  100000001: {
     color: Blue,
     type: Ground+Static+Building,
     model: Gas Platform,
     init_state: {
       ic_long_gc_deg: 120.5,
       ic_lat_geod_deg: 60.5,
-      ic_h_sl_ft: 1000,
+      ic_h_sl_ft: 2500,
     }
   }
 }
