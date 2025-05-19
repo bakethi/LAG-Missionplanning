@@ -145,6 +145,12 @@ def main(args):
         / all_args.env_name / all_args.scenario_name / all_args.algorithm_name / all_args.experiment_name
     if not run_dir.exists():
         os.makedirs(str(run_dir))
+    # latest run dir
+    latest_run_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/results") \
+        / all_args.env_name / all_args.scenario_name / all_args.algorithm_name / all_args.experiment_name / 'latest'
+    if not latest_run_dir.exists():
+        os.makedirs(str(latest_run_dir))
+
 
     # wandb
     if all_args.use_wandb:
@@ -182,7 +188,8 @@ def main(args):
         "envs": envs,
         "eval_envs": eval_envs,
         "device": device,
-        "run_dir": run_dir
+        "run_dir": run_dir,
+        "latest_run_dir": latest_run_dir,
     }
 
     # run experiments
