@@ -1,0 +1,85 @@
+# Description: Operational Story 01 - Single agent attacking a static airbase.
+# Task File: OpStory01_task.py
+# Task Class: AirbaseAttackTask
+# Config File: OpStory01.yaml
+
+# Environment fixed parameters
+env_name: singlecombat
+config_name: OpStory01
+num_processes: 8
+seed: 42
+
+# JSBSim simulation parameters
+agent_interaction_freq: 12
+sim_freq: 240
+aircraft_random_init: False
+# origin: [120.0, 60.0, 0.0] # Optional: Define global origin if needed by env_base.py for all sims
+                           # AircraftSimulator has its own default if not provided.
+
+# Environment task parameters
+task: op_story_01
+
+# AirbaseAttackTask specific parameters
+airbase_attack_range_m: 7000
+airbase_damage_per_hit: 10
+missile_damage: 50
+airbase_destruction_reward: 500.0
+
+# Airbase object properties
+airbase_initial_hp: 100
+airbase_position: [121.0, 60.5, 0.0] # Target airbase [longitude_deg, latitude_deg, altitude_sl_m]
+
+# Aircraft properties (for the single attacking agent)
+# MODIFIED to match the dictionary structure of heading.yaml
+aircraft_configs: { # Use curly braces for a dictionary
+  A0100: {        # UID is the key for this agent's config block
+    # color: Red,   # Optional: if AircraftSimulator or your setup uses it
+    model: f16,
+    num_missiles: 4, # Relevant for AirbaseAttackTask
+    # Add any other specific parameters AircraftSimulator or OpStory01_task might use from here
+    init_state: {
+      ic_long_gc_deg: 120.0,
+      ic_lat_geod_deg: 60.0,
+      ic_h_sl_ft: 20000,
+      ic_psi_true_deg: 90, # Heading East towards an airbase at 121.0 Lon
+      ic_u_fps: 800.0,
+      ic_v_fps: 0.0,       # Assuming no initial side slip
+      ic_w_fps: 0.0,       # Assuming no initial vertical body velocity (level flight)
+      ic_p_rad_sec: 0.0,   # No initial roll rate
+      ic_q_rad_sec: 0.0,   # No initial pitch rate
+      ic_r_rad_sec: 0.0    # No initial yaw rate
+    }
+  }
+  # If you had a second agent, it would be another key-value pair here:
+  # Player2: { model: f16, ... }
+}
+
+# Render (optional)
+render: False
+render_host: localhost
+render_port: 5501
+render_freq: 2
+
+# --- Termination Condition Parameters ---
+LowAltitude_altitude_limit_m: 500
+ExtremeState_max_omegaxy_rad_sec: 3.0
+ExtremeState_max_omegaz_rad_sec: 2.0
+ExtremeState_max_aoa_deg: 25
+ExtremeState_min_aoa_deg: -20
+ExtremeState_max_beta_deg: 20
+ExtremeState_min_beta_deg: -20
+ExtremeState_min_vel_mps: 80
+ExtremeState_max_vel_mps: 600
+Overload_max_g: 9.0
+Overload_min_g: -3.0
+Timeout_max_steps: 1800
+
+# --- Reward Function Parameters ---
+AltitudeReward_safe_altitude: 3.0
+AltitudeReward_danger_altitude: 2.0
+AltitudeReward_Kv: 0.2
+
+# EventDrivenReward (parameters can be added if class is modified)
+
+# Logger path for training runs
+log_path: logs/PPO/OpStory01/JSBSim-singlecombat-OpStory01

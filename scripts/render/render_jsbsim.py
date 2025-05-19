@@ -100,6 +100,7 @@ def main(args):
         "device": device,
         "run_dir": run_dir,
         "latest_run_dir": latest_run_dir,
+        "render_mode": 'txt'
     }
 
     # run experiments
