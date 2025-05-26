@@ -325,6 +325,31 @@ class AircraftSimulator(BaseSimulator):
             if missile.is_alive:
                 return missile
         return None
+    
+    def fire_missile(self, target_sim: BaseSimulator): # The target_sim can be any BaseSimulator
+        """
+        Launches a missile towards a target simulator, creating the appropriate missile type.
+        :param target_sim: The target simulator (can be AircraftSimulator or StaticSimulator).
+        """
+        if self.num_left_missiles > 0:
+            new_missile_uid = f"{self.uid[0]}M{len(self.launch_missiles):03d}"
+            
+            # Determine which missile type to create based on the target type
+            if isinstance(target_sim, StaticSimulator):
+                # Call the custom A2GMissile.create for StaticSimulator targets
+                missile = A2GMissile.create(self, target_sim, new_missile_uid)
+            elif isinstance(target_sim, AircraftSimulator):
+                # Call the original MissileSimulator.create for AircraftSimulator targets
+                missile = MissileSimulator.create(self, target_sim, new_missile_uid)
+            else:
+                logging.error(f"Unsupported missile target type: {type(target_sim)}")
+                return # Do not fire if target type is unknown
+
+            self.launch_missiles.append(missile)
+            self.num_left_missiles -= 1
+            logging.info(f"Agent {self.uid} fired missile {missile.uid} at target {target_sim.uid}. Missiles left: {self.num_left_missiles}")
+        else:
+            logging.info(f"Agent {self.uid} has no missiles left to fire.")
 
 
 class MissileSimulator(BaseSimulator):
@@ -561,3 +586,133 @@ class StaticSimulator(BaseSimulator):
             print(pos)
             return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Length=1000.0,Width=1000.0,Height=1000.0,Name={self.model},Color={self.color},Type={self.type}"
         return ""
+    
+# ... (existing MissileSimulator class definition) ...
+
+class A2GMissile(MissileSimulator):
+    """
+    A specialized class for Air-to-Ground missiles.
+    This class bypasses the default MissileSimulator targeting
+    for AircraftSimulator and handles StaticSimulator targets directly.
+    """
+
+    @classmethod
+    def create(cls, parent: AircraftSimulator, target_base: StaticSimulator, uid: str, missile_model: str = "AGM-65"):
+        """
+        Custom factory method for A2GMissile. It takes a StaticSimulator as a target
+        and initializes the missile, circumventing the base MissileSimulator's
+        AircraftSimulator-specific target assignment.
+        """
+        assert parent.dt == target_base.dt or target_base.dt == 0, "Integration timestep must be compatible!"
+        
+        # Instantiate A2GMissile directly using its own __init__
+        missile = cls(uid, parent.color, missile_model, parent.dt)
+        
+        # Manually assign parent and the StaticSimulator target
+        missile.parent_aircraft = parent
+        missile.target_static_base = target_base # Store the StaticSimulator target here
+        
+        # Inherit origin from parent aircraft for coordinate conversions
+        missile.lon0, missile.lat0, missile.alt0 = parent.lon0, parent.lat0, parent.alt0
+
+        # Initialize missile state (copied from MissileSimulator.launch)
+        missile._geodetic[:] = parent.get_geodetic()
+        missile._position[:] = parent.get_position()
+        missile._velocity[:] = parent.get_velocity()
+        missile._posture[:] = parent.get_rpy()
+        missile._posture[0] = 0  # Missile's roll typically remains zero
+
+        # Init missile internal status variables (accessing private name `_MissileSimulator__status`)
+        missile._t = 0
+        missile._m = missile._m0
+        missile._dtheta, missile._dphi = 0, 0
+        missile._MissileSimulator__status = MissileSimulator.LAUNCHED # Mark as launched
+        missile._distance_pre = np.inf
+        missile._distance_increment = deque(maxlen=int(5 / missile.dt))
+        missile._left_t = int(1 / missile.dt)
+        
+        # Importantly, this missile does NOT add itself to target_base.under_missiles
+        # because StaticSimulator does not have this attribute.
+
+        return missile
+
+    def __init__(self,
+                 uid: str,
+                 color: TeamColors,
+                 model: str = "AGM-65", # Default A2G missile model
+                 dt: float = 1 / 12): # Use parent's dt for simulation updates
+        
+        super().__init__(uid, color, model, dt)
+        
+        # The `target_aircraft` attribute from MissileSimulator will remain `None`
+        # or be unused for A2G targets because we bypass `MissileSimulator.target()`.
+        self.target_static_base = None # This will be set by the custom A2GMissile.create method
+        
+        # Override A2G specific parameters from the base missile properties if desired
+        self._t_max = 120    # Example: Longer flight time for ground attack
+        self._Rc = 50        # Example: Different explosion radius for A2G
+        self._v_min = 80     # Example: Lower minimum velocity for A2G
+
+    def _guidance(self):
+        """
+        Overrides MissileSimulator._guidance. This method implements proportional
+        navigation for a static target (StaticSimulator).
+        """
+        if self.target_static_base is None:
+            raise ValueError("A2GMissile target_static_base is not set. Use A2GMissile.create().")
+
+        # Get missile's current state
+        x_m, y_m, z_m = self.get_position()
+        dx_m, dy_m, dz_m = self.get_velocity()
+        v_m = np.linalg.norm([dx_m, dy_m, dz_m])
+        theta_m = np.arcsin(dz_m / v_m) if v_m > 0 else 0 # Prevent division by zero if v_m is 0
+
+        # Use the StaticSimulator's position and (zero) velocity as the target
+        x_t, y_t, z_t = self.target_static_base.get_position()
+        dx_t, dy_t, dz_t = self.target_static_base.get_velocity() # This will be (0,0,0) for a StaticSimulator
+
+        # Calculate relative position and distance
+        Rxy = np.linalg.norm([x_m - x_t, y_m - y_t])
+        Rxyz = np.linalg.norm([x_m - x_t, y_m - y_t, z_t - z_m])
+
+        # Calculate line-of-sight angular rates (dbeta and deps)
+        # Add small epsilon to denominators to prevent division by zero for Rxy or Rxyz being 0
+        dbeta = ((dy_t - dy_m) * (x_t - x_m) - (dx_t - dx_m) * (y_t - y_m)) / (Rxy**2 + 1e-8)
+        deps = ((dz_t - dz_m) * Rxy**2 - (z_t - z_m) * (
+            (x_t - x_m) * (dx_t - dx_m) + (y_t - y_m) * (dy_t - dy_m))) / (Rxyz**2 * Rxy + 1e-8)
+
+        # Calculate normal accelerations (ny, nz) for proportional navigation
+        ny = self.K * v_m / self._g * np.cos(theta_m) * dbeta
+        nz = self.K * v_m / self._g * deps + np.cos(theta_m)
+
+        return np.clip([ny, nz], -self._nyz_max, self._nyz_max), Rxyz
+
+    def run(self):
+        """
+        Overrides MissileSimulator.run to handle hits on StaticSimulator targets.
+        It manages the missile's flight and updates its status (HIT/MISS).
+        """
+        self._t += self.dt
+        action, distance = self._guidance()
+        self._distance_increment.append(distance > self._distance_pre)
+        self._distance_pre = distance
+        
+        # Check if the missile has hit the static base (within explosion radius)
+        if distance < self._Rc:
+            self._MissileSimulator__status = MissileSimulator.HIT # Mark missile status as HIT
+            self.render_explosion = True # Flag for rendering explosion effect
+            logging.info(f"A2GMissile {self.uid} hit target {self.target_static_base.uid} at distance {distance:.2f}m!")
+            # The environment's task step method (OpStory01_task.step) will check
+            # this missile's status and apply damage to the airbase's HP.
+        # Check for missile expiration (time limit, minimum velocity, or increasing distance to target)
+        elif (self._t > self._t_max) or (np.linalg.norm(self.get_velocity()) < self._v_min) \
+                or np.sum(self._distance_increment) >= self._distance_increment.maxlen:
+            self._MissileSimulator__status = MissileSimulator.MISS # Mark missile status as MISS/expired
+            logging.info(f"A2GMissile {self.uid} missed or expired.")
+        else:
+            self._state_trans(action) # Continue missile's physics simulation
+        return True # Continue running the simulation
+
+    def close(self):
+        super().close() # Call base close method
+        self.target_static_base = None # Clear reference to target

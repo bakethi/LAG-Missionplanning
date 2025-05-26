@@ -12,6 +12,7 @@ from ..reward_functions import AltitudeReward, EventDrivenReward # PostureReward
 # from ..utils.utils import get_AO_TA_R, get2d_AO_TA_R, in_range_rad, LLA2NEU, get_root_dir # Utils for enemy interaction removed
 from ..utils.utils import LLA2NEU # Keep if used for airbase coord transformation or other agent calcs
 # BaselineActor and related agent logic removed
+import logging # <<< ADD THIS IMPORT for logging messages
 
 class AirbaseAttackTask(BaseTask):
     def __init__(self, config):
@@ -33,7 +34,7 @@ class AirbaseAttackTask(BaseTask):
             ExtremeState(self.config),
             Overload(self.config),
             Timeout(self.config),
-            # Add new termination conditions:
+            # Suggestion: Add an AirbaseDestroyedTermination condition here for explicit success.
             # e.g., AirbaseDestroyedTermination(self.config)
             # e.g., AgentTooFarFromObjectiveTermination(self.config)
         ]
@@ -76,8 +77,8 @@ class AirbaseAttackTask(BaseTask):
             c.fcs_elevator_cmd_norm,
             c.fcs_rudder_cmd_norm,
             c.fcs_throttle_cmd_norm,
-            # Add weapon launch command if not handled by a separate mechanism
-            # c.fcs_weapon_launch_cmd # Placeholder for weapon launch
+            # Suggestion: Add weapon launch command to action_var for consistency
+            # c.fcs_weapon_launch_cmd 
         ]
         # Define variables for rendering
         self.render_var = [
@@ -91,45 +92,20 @@ class AirbaseAttackTask(BaseTask):
 
     def load_observation_space(self):
         # 9 ego states + 3 airbase relative states (dx, dy, dz to airbase) + 1 airbase status
-        # Adjust shape based on the actual features you decide on in get_obs
-        # Example: 9 ego + 3 relative position to airbase + 1 airbase destroyed status = 13
-        # If using delta_long, delta_lat, delta_alt, then it's 3 components.
-        # If using relative NEU (North-East-Up) vector, it's also 3.
-        # Plus agent's own altitude (1) + roll sin/cos (2) + pitch sin/cos (2) + v_body (3) + vc (1) = 9
-        # Total 9 (ego) + 3 (airbase relative pos) + 1 (airbase destroyed status) = 13
         self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(13,), dtype=np.float32)
 
 
     def load_action_space(self):
-        # Assuming same discrete action space as before for flight controls
-        # aileron, elevator, rudder, throttle
-        # Add a discrete action for firing a weapon if needed.
-        # E.g., [41, 41, 41, 30, 2] where the last one is no-fire/fire
-        self.action_space = spaces.MultiDiscrete([41, 41, 41, 30])
+        # Added discrete action for firing a weapon (0 for no fire, 1 for fire)
+        self.action_space = spaces.MultiDiscrete([41, 41, 41, 30, 2]) # <<< MODIFIED HERE
 
 
     def get_obs(self, env, agent_id):
         """
         Convert simulation states into the format of observation_space.
-        Observation:
-        - Ego agent info (normalized)
-            - [0] ego altitude         (unit: 5km)
-            - [1] ego_roll_sin
-            - [2] ego_roll_cos
-            - [3] ego_pitch_sin
-            - [4] ego_pitch_cos
-            - [5] ego v_body_x         (unit: Mach speed, e.g., /340)
-            - [6] ego v_body_y         (unit: Mach speed)
-            - [7] ego v_body_z         (unit: Mach speed)
-            - [8] ego_vc               (unit: Mach speed)
-        - Airbase relative info
-            - [9] relative_N_to_airbase (unit: 10km)
-            - [10] relative_E_to_airbase (unit: 10km)
-            - [11] relative_D_to_airbase (unit: 10km)  (Down, so positive if airbase is lower)
-            - [12] airbase_destroyed_status (0 or 1)
         """
         sim = env.agents[agent_id]
-        ego_props = sim.get_property_values(self.state_var) # Using self.state_var
+        ego_props = sim.get_property_values(self.state_var)
 
         # (1) Ego agent info normalization
         obs = np.zeros(self.observation_space.shape, dtype=np.float32)
@@ -155,12 +131,7 @@ class AirbaseAttackTask(BaseTask):
         # Airbase's LLA position (assuming airbase_data["position"] is [lon, lat, alt])
         airbase_lon, airbase_lat, airbase_alt = airbase_data["position"]
         
-        # Convert to common NEU frame relative to a reference point (e.g., agent's initial position or a fixed map origin)
-        # For simplicity here, let's use the agent's current sim origin if available, or assume one
-        # If env.lon0, env.lat0, env.alt0 are available from BaseEnv or SingleCombatEnv:
-        # ref_lon, ref_lat, ref_alt = env.lon0, env.lat0, env.alt0 
-        # Otherwise, use agent's initial position or a fixed point. Here, using airbase as ref for relative vector
-        
+        # Convert to common NEU frame relative to a reference point
         agent_pos_neu = np.array(LLA2NEU(agent_lon, agent_lat, agent_alt, airbase_lon, airbase_lat, airbase_alt))
         airbase_pos_neu = np.array([0,0,0]) # Airbase is the origin in this relative NEU frame
 
@@ -168,8 +139,7 @@ class AirbaseAttackTask(BaseTask):
         
         obs[9] = relative_neu[0] / 10000  # Relative North / 10km
         obs[10] = relative_neu[1] / 10000 # Relative East / 10km
-        obs[11] = relative_neu[2] / 10000 # Relative Down (if airbase is at alt=0, this is -agent_alt_relative_to_airbase_alt) / 10km
-                                          # Or more simply, (airbase_alt - agent_alt) / 10000
+        obs[11] = relative_neu[2] / 10000 # Relative Down / 10km
 
         obs[12] = 1.0 if airbase_data["destroyed"] else 0.0
 
@@ -178,21 +148,28 @@ class AirbaseAttackTask(BaseTask):
 
     def normalize_action(self, env, agent_id, action):
         """Convert discrete action index into continuous value for JSBSim."""
-        # Assumes action is a list/array: [aileron_idx, elevator_idx, rudder_idx, throttle_idx]
-        norm_act = np.zeros(len(self.action_var)) # Or fixed 4 if no weapon action
+        # Assumes action is a list/array: [aileron_idx, elevator_idx, rudder_idx, throttle_idx, fire_weapon_idx]
+        norm_act = np.zeros(len(self.action_var)) 
         norm_act[0] = action[0] / 20.0  - 1.0  # aileron
         norm_act[1] = action[1] / 20.0 - 1.0   # elevator
         norm_act[2] = action[2] / 20.0 - 1.0   # rudder
         norm_act[3] = action[3] / (self.action_space.nvec[3]-1) * 0.5 + 0.4 # throttle (0.4 to 0.9)
-        # If you add a weapon fire action:
-        # weapon_fire_command = action[4] # 0 for no fire, 1 for fire
-        # if weapon_fire_command == 1 and env.agents[agent_id].num_left_missiles > 0:
-        #     # Logic to designate airbase as target and launch missile
-        #     # This is complex as MissileSimulator expects an AircraftSimulator target.
-        #     # Simplification: task tells simulator to fire in direction of airbase.
-        #     # Or, mark a flag that get_reward/step will use to check for "hit"
-        #     print(f"Agent {agent_id} fires a missile!")
-        #     env.agents[agent_id].fire_missile(target_coords=env.airbase["position"]) # Needs implementation in AircraftSimulator
+        
+        # Implement weapon fire action
+        # Check if the action space has the fire command (i.e., len(action) is 5)
+        if len(action) > 4: 
+            weapon_fire_command = action[4] # 0 for no fire, 1 for fire
+            
+            # Check if agent has missiles left and if the airbase simulator exists in the environment
+            if weapon_fire_command == 1 and env.agents[agent_id].num_left_missiles > 0 and hasattr(env, 'airbase_simulator'):
+                logging.info(f"Agent {agent_id} fires a missile at airbase! Missiles left: {env.agents[agent_id].num_left_missiles}") # <<< MODIFIED HERE
+                # Call the fire_missile method on the AircraftSimulator, passing the airbase_simulator
+                env.agents[agent_id].fire_missile(target_sim=env.airbase_simulator) # <<< MODIFIED HERE
+            elif weapon_fire_command == 1 and env.agents[agent_id].num_left_missiles <= 0:
+                logging.debug(f"Agent {agent_id} attempted to fire, but no missiles left.") # <<< MODIFIED HERE
+            elif weapon_fire_command == 1 and not hasattr(env, 'airbase_simulator'):
+                logging.warning("Agent attempted to fire missile, but airbase_simulator not found in environment.") # <<< MODIFIED HERE
+
         return norm_act
 
     def reset(self, env):
@@ -202,7 +179,6 @@ class AirbaseAttackTask(BaseTask):
         
         # Reset airbase state (from env, which should handle its own reset)
         # Assuming env.reset() or env.reset_simulators() handles airbase dict reset
-        # If not, do it here:
         if hasattr(env, 'airbase'):
             env.airbase["hp"] = getattr(self.config, 'airbase_initial_hp', 100)
             env.airbase["destroyed"] = False
@@ -218,7 +194,7 @@ class AirbaseAttackTask(BaseTask):
         agent_id = list(env.agents.keys())[0] # Assuming single agent
         sim = env.agents[agent_id]
         airbase_data = env.airbase
-        done_by_task = False
+        done_by_task = False # This flag is currently not used to terminate the episode here
 
         if not airbase_data["destroyed"]:
             # Simple "gun" or continuous damage if within range (remove if only missile based)
@@ -226,7 +202,6 @@ class AirbaseAttackTask(BaseTask):
             airbase_lla = airbase_data["position"]
             
             # Calculate distance (approximate for LLA, or convert to NEU for better accuracy)
-            # Simplified distance calculation (great-circle distance approximation for lat/lon)
             R = 6371e3  # Earth radius in meters
             lat1, lon1 = np.radians(agent_lla[1]), np.radians(agent_lla[0])
             lat2, lon2 = np.radians(airbase_lla[1]), np.radians(airbase_lla[0])
@@ -238,49 +213,36 @@ class AirbaseAttackTask(BaseTask):
             alt_diff = abs(agent_lla[2] - airbase_lla[2])
             dist_3d = np.sqrt(ground_dist**2 + alt_diff**2)
 
-            if dist_3d < self.airbase_attack_range: # e.g. 5km "gun" range
+            if dist_3d < self.airbase_attack_range: 
                 # This simulates direct attack like guns when in range
-                # For missile-only, remove this block and handle missile hits in get_reward
-                # airbase_data["hp"] -= self.airbase_damage_per_hit * env.dt # Damage per second
-                # print(f"Agent in attack range ({dist_3d:.0f}m). Airbase HP: {airbase_data['hp']:.1f}")
-                pass # Placeholder for direct gun attack logic if any
+                # Uncomment and adjust if you want continuous gun damage:
+                # airbase_data["hp"] -= self.airbase_damage_per_hit * env.dt 
+                # logging.debug(f"Agent in attack range ({dist_3d:.0f}m). Airbase HP: {airbase_data['hp']:.1f}")
+                pass 
 
-            # Check for missile hits (simplistic: any successful missile hit damages airbase)
-            # This assumes EventDrivenReward handles missile success by calling target.shotdown()
-            # which we need to intercept or modify for a simple airbase.
-            # A more robust way: iterate sim.launch_missiles, check their state and proximity to airbase.
+            # Check for missile hits from launched missiles
             for missile in sim.launch_missiles:
-                if missile.is_alive: # or a custom status for "hit simple target"
-                    # Simple proximity check for missiles
-                    missile_pos_neu = missile.get_position() # Assuming missile has NEU position from its origin
-                    # Convert airbase LLA to NEU relative to missile's origin (sim.lon0, sim.lat0, sim.alt0)
-                    airbase_neu_rel_missile_origin = LLA2NEU(*airbase_lla, sim.lon0, sim.lat0, sim.alt0)
-                    
-                    dist_missile_to_airbase = np.linalg.norm(missile_pos_neu - np.array(airbase_neu_rel_missile_origin))
-
-                    if dist_missile_to_airbase < missile._Rc: # Using missile's explosion radius
-                        if not airbase_data["destroyed"]:
-                            print(f"Missile {missile.uid} hit airbase! HP before: {airbase_data['hp']}")
-                            airbase_data["hp"] -= getattr(self.config, 'missile_damage', 50) # Configurable missile damage
-                            missile.hit_target() # Ensure missile is marked as non-alive, exploded
-                            print(f"Airbase HP after: {airbase_data['hp']}")
+                # If missile has hit its target (status is HIT) and hasn't been processed for damage yet
+                if missile.is_success and not getattr(missile, '_damage_applied', False): # Use is_success or !is_alive
+                    if not airbase_data["destroyed"]:
+                        print(f"Missile {missile.uid} hit airbase! HP before: {airbase_data['hp']}") # <<< MODIFIED HERE
+                        airbase_data["hp"] -= getattr(self.config, 'missile_damage', 50) # Configurable missile damage
+                        setattr(missile, '_damage_applied', True) # Mark damage as applied to prevent repeat damage
+                        print(f"Airbase HP after: {airbase_data['hp']}") # <<< MODIFIED HERE
                 
             if airbase_data["hp"] <= 0:
                 airbase_data["hp"] = 0
                 airbase_data["destroyed"] = True
-                print("Airbase Destroyed by agent attack!")
-                # done_by_task = True # This could be a success termination condition
+                print("Airbase Destroyed by agent attack!") 
+                # done_by_task = True # Uncomment this line if you want the task to force termination on destruction
 
-        # Return True if task logic determines episode should end (e.g. objective met)
-        # The main done signal will be aggregated by the environment from termination_conditions
+        # Return True if task logic determines episode should end
         return done_by_task
 
 
     def get_reward(self, env, agent_id, info={}):
         """
-        Calculate rewards:
-        - Base rewards from reward_functions (Altitude, adapted EventDriven)
-        - Task-specific rewards for airbase interaction.
+        Calculate rewards.
         """
         reward = 0.0
         sim = env.agents[agent_id]
@@ -292,26 +254,20 @@ class AirbaseAttackTask(BaseTask):
         
         # Custom task rewards for airbase
         if not airbase_data["destroyed"]:
-            # Reward for damaging airbase (if not covered by EventDrivenReward for missile hits)
-            # This part might be redundant if EventDrivenReward correctly attributes missile hits
-            # For example, if direct "gun" damage was applied in step():
-            # if env.airbase["hp"] < self._previous_airbase_hp:
-            #    reward += (self._previous_airbase_hp - env.airbase["hp"]) * some_multiplier
-            # self._previous_airbase_hp = env.airbase["hp"] # Requires _previous_airbase_hp init
-            pass
+            pass # Damage reward is handled by EventDrivenReward if configured, or could be added explicitly here
         else: # Airbase is destroyed
             if not self._airbase_destroyed_reward_given:
-                destruction_reward = getattr(self.config, 'airbase_destruction_reward', 200.0)
-                print(f"Airbase destroyed, granting reward: {destruction_reward}")
+                destruction_reward = getattr(self.config, 'airbase_destruction_reward', 200.0) #
+                print(f"Airbase destroyed, granting reward: {destruction_reward}") 
                 reward += destruction_reward
                 self._airbase_destroyed_reward_given = True
         
-        # Penalty for agent being dead (crash or "shot down" by placeholder airbase defense)
+        # Penalty for agent being dead
         if not sim.is_alive and not self._agent_die_flag[agent_id]:
             # This might be already handled by EventDrivenReward's crash/shotdown penalties
             # death_penalty = getattr(self.config, 'agent_death_penalty', -100.0)
             # reward += death_penalty
-            # print(f"Agent {agent_id} died, penalty: {death_penalty}")
+            # logging.info(f"Agent {agent_id} died, penalty: {death_penalty}")
             self._agent_die_flag[agent_id] = True
         
         info['airbase_hp'] = airbase_data["hp"]

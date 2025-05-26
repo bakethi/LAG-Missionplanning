@@ -82,15 +82,16 @@ class BaseEnv(gymnasium.Env):
             )
 
         # Load static base objects
-        for uid, config in self.config.static_base_configs.items():
-            self._static_sims[uid] = StaticSimulator(
-                uid=uid,
-                color=config.get("color", "Blue"),
-                model=config.get("model", "Gas Platform"),
-                type=config.get("type", "Ground+Static+Building"),
-                init_state=config.get("init_state"),
-                origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
-            )
+        if hasattr(self.config, 'static_base_configs'):
+            for uid, config in self.config.static_base_configs.items():
+                self._static_sims[uid] = StaticSimulator(
+                    uid=uid,
+                    color=config.get("color", "Blue"),
+                    model=config.get("model", "Gas Platform"),
+                    type=config.get("type", "Ground+Static+Building"),
+                    init_state=config.get("init_state"),
+                    origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
+                )
 
         # Merge both for rendering/logging
         self._jsbsims = {**self._aircraft_sims, **self._static_sims}
