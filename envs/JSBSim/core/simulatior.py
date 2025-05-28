@@ -535,7 +535,7 @@ class MissileSimulator(BaseSimulator):
 
 
 class StaticSimulator(BaseSimulator):
-    def __init__(self, uid, color, model, type, init_state=None, origin=(120.0, 60.0, 0.0)):
+    def __init__(self, uid, color, model, type, init_state=None, origin=(120.5, 60.5, 0.0)):
         super().__init__(uid, color, dt=0)
         self.model = model
         self.type = type
@@ -549,6 +549,24 @@ class StaticSimulator(BaseSimulator):
             self._position = np.array([lon, lat, alt])
         else:
             self._position = np.zeros(3)
+    
+    def get_property_value(self, prop):
+        """Get the value of the specified property for static objects."""
+        if isinstance(prop, Property):
+            # Use the actual property names as defined in your Catalog
+            if prop.name_jsbsim == "enemy_base/longitude-geod-deg":
+                return self._position[0]
+            elif prop.name_jsbsim == "enemy_base/latitude-geod-deg":
+                return self._position[1]
+            elif prop.name_jsbsim == "enemy_base/altitude-ft":
+                return self._position[2] / 0.3048
+            elif prop.name_jsbsim == "enemy_base/altitude-m":
+                return self._position[2]
+            else:
+                raise ValueError(f"Property {prop.name_jsbsim} not supported by StaticSimulator.")
+        else:
+            raise ValueError(f"prop type unhandled: {type(prop)} ({prop})")
+
     def run(self, **kwargs):
         pass
     def close(self):
