@@ -67,6 +67,8 @@ def run_test_logic():
     logger.info(f"Episode Reset. Initial Airbase HP: {env.airbase['hp']}")
     logger.info(f"Initial Obs (Agent 0): {obs[0]}")
 
+    env.render(mode='txt', filepath=f"/home/bake/Projects/LAG-Missionplanning/tests/test_logic.txt.acmi")
+
     total_reward = 0
     max_test_steps = 1000 # Adjust this to run for more or fewer steps
 
@@ -88,6 +90,8 @@ def run_test_logic():
 
 
         packed_obs, packed_rewards, packed_dones, info = env.step(action)
+
+        env.render(mode='txt', filepath=f"/home/bake/Projects/LAG-Missionplanning/tests/test_logic.txt.acmi")
 
         # Unpack rewards, dones for single agent
         reward = packed_rewards[0][0]
