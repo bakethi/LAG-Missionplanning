@@ -4,7 +4,7 @@ import gymnasium
 from gymnasium.utils import seeding
 import numpy as np
 from typing import Dict, Any, Tuple
-from ..core.simulatior import AircraftSimulator, BaseSimulator, StaticSimulator
+from ..core.simulatior import AircraftSimulator, BaseSimulator, StaticSimulator, WaypointSimulator
 from ..tasks.task_base import BaseTask
 from ..utils.utils import parse_config
 
@@ -51,6 +51,10 @@ class BaseEnv(gymnasium.Env):
     @property
     def static_bases(self) -> Dict[str, StaticSimulator]:
         return self._static_sims
+    
+    @property
+    def waypoints(self) -> Dict[str, WaypointSimulator]:
+        return self._tempsims
 
     @property
     def time_interval(self) -> int:
@@ -68,6 +72,7 @@ class BaseEnv(gymnasium.Env):
         # Separate dictionaries for aircraft and static sims
         self._aircraft_sims = {}  # type: Dict[str, AircraftSimulator]
         self._static_sims = {}    # type: Dict[str, StaticSimulator]
+        self._waypoint_sims = {}  # type: Dict[str, WaypointSimulator]
 
         # Load aircraft agents
         for uid, config in self.config.aircraft_configs.items():
@@ -92,8 +97,19 @@ class BaseEnv(gymnasium.Env):
                 origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
             )
 
+        #load waypoints
+        for uid, config in self.config.waypoint_configs.items():    
+            self._waypoint_sims[uid] = WaypointSimulator(
+                uid=uid,
+                color=config.get("color", "Green"),
+                model=config.get("model", "Waypoint"),
+                type=config.get("type", "Navaid+Static+Waypoint"),
+                init_state=config.get("init_state"),
+                origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
+            )
+
         # Merge both for rendering/logging
-        self._jsbsims = {**self._aircraft_sims, **self._static_sims}
+        self._jsbsims = {**self._aircraft_sims, **self._static_sims, **self._waypoint_sims}
 
         # Determine ego/enemy IDs (only among aircraft)
         _default_team_uid = list(self._aircraft_sims.keys())[0][0]
