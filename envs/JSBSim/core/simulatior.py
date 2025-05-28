@@ -543,9 +543,9 @@ class StaticSimulator(BaseSimulator):
         self.rendered = False
         # Set position from init_state if provided
         if init_state is not None:
-            lon = init_state.get('ic_long_gc_deg', origin[0])
-            lat = init_state.get('ic_lat_geod_deg', origin[1])
-            alt = init_state.get('ic_h_sl_ft', origin[2]) * 0.3048  # ft to m
+            lon = init_state.get('enemy_base/longitude-geod-deg', origin[0])
+            lat = init_state.get('enemy_base/latitude-geod-deg', origin[1])
+            alt = init_state.get('enemy_base/altitude-ft', origin[2]) * 0.3048  # ft to m
             self._position = np.array([lon, lat, alt])
         else:
             self._position = np.zeros(3)

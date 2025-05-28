@@ -33,9 +33,9 @@ class SingleControlEnv(BaseEnv):
                 init_state = base_cfg.get('init_state', {})
                 # Convert geodetic to NEU if needed, or store geodetic directly
                 position = self.geodetic_to_neu(
-                    init_state.get('ic_long_gc_deg', 120.5),
-                    init_state.get('ic_lat_geod_deg', 60.5),
-                    init_state.get('ic_h_sl_ft', 1000) * 0.3048  # ft to m
+                    init_state.get('enemy_base/latitude-geod-deg', 120.5),
+                    init_state.get('enemy_base/longitude-geod-deg', 60.5),
+                    init_state.get('enemy_base/altitude-ft', 1000) * 0.3048  # ft to m
                 )
                 self.static_bases[uid] = {
                     'color': color,
