@@ -220,6 +220,28 @@ class AirbaseAttackTask(BaseTask):
                 # logging.debug(f"Agent in attack range ({dist_3d:.0f}m). Airbase HP: {airbase_data['hp']:.1f}")
                 pass 
 
+            # Loop through launched missiles and log their positions
+            for missile in sim.launch_missiles: # Corrected iteration for launched_missiles dictionary
+                if missile.is_alive: # Log position only if the missile is still active/flying
+                    missile_pos = missile.get_geodetic()
+                    missile_velo = missile.get_velocity()
+                    missile_coordinates = missile.get_position()
+                    missile_vel_u_mps = missile.get_property_value(c.velocities_u_mps)
+                    missile_vel_v_mps = missile.get_property_value(c.velocities_v_mps)
+                    missile_vel_w_mps = missile.get_property_value(c.velocities_w_mps)
+                    missile_vel_vc_mps = missile.get_property_value(c.velocities_vc_mps)
+
+                    logging.debug(f"Missile {missile.uid} Pos: Long={missile_pos[0]:.4f} deg, "
+                                f"Lat={missile_pos[1]:.4f} deg, Alt={missile_pos[2]:.2f} m | "
+                                f"Vel(Body): U={missile_vel_u_mps:.2f} m/s, V={missile_vel_v_mps:.2f} m/s, "
+                                f"W={missile_vel_w_mps:.2f} m/s, VC={missile_vel_vc_mps:.2f} m/s")
+
+                    # Log missile position: Longitude, Latitude, Altitude (meters)
+                    logging.debug(f"Missile {missile.uid} Position: Long={missile_pos[0]:.4f} deg, "
+                                  f"Lat={missile_pos[1]:.4f} deg, Alt={missile_pos[2]:.2f} m")
+                    logging.debug(f"Missile {missile.uid} Velocity: {missile_velo}")
+                    logging.debug(f"Missile {missile.uid} Relative Position: {missile_coordinates}")
+
             # Check for missile hits from launched missiles
             for missile in sim.launch_missiles:
                 # If missile has hit its target (status is HIT) and hasn't been processed for damage yet

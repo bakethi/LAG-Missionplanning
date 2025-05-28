@@ -48,8 +48,9 @@ aircraft_configs: { # Use curly braces for a dictionary
       ic_p_rad_sec: 0.0,   # No initial roll rate
       ic_q_rad_sec: 0.0,   # No initial pitch rate
       ic_r_rad_sec: 0.0    # No initial yaw rate
-    }
-  }
+    },
+    missile: 10,
+  },
   # If you had a second agent, it would be another key-value pair here:
   # Player2: { model: f16, ... }
 }
