@@ -164,7 +164,9 @@ class AirbaseAttackTask(BaseTask):
             if weapon_fire_command == 1 and env.agents[agent_id].num_left_missiles > 0 and hasattr(env, 'airbase_simulator'):
                 logging.info(f"Agent {agent_id} fires a missile at airbase! Missiles left: {env.agents[agent_id].num_left_missiles}") # <<< MODIFIED HERE
                 # Call the fire_missile method on the AircraftSimulator, passing the airbase_simulator
-                env.agents[agent_id].fire_missile(target_sim=env.airbase_simulator) # <<< MODIFIED HERE
+                missile_instance = env.agents[agent_id].fire_missile(target_sim=env.airbase_simulator) 
+                if missile_instance:
+                    env.add_temp_simulator(missile_instance)
             elif weapon_fire_command == 1 and env.agents[agent_id].num_left_missiles <= 0:
                 logging.debug(f"Agent {agent_id} attempted to fire, but no missiles left.") # <<< MODIFIED HERE
             elif weapon_fire_command == 1 and not hasattr(env, 'airbase_simulator'):
@@ -226,15 +228,6 @@ class AirbaseAttackTask(BaseTask):
                     missile_pos = missile.get_geodetic()
                     missile_velo = missile.get_velocity()
                     missile_coordinates = missile.get_position()
-                    missile_vel_u_mps = missile.get_property_value(c.velocities_u_mps)
-                    missile_vel_v_mps = missile.get_property_value(c.velocities_v_mps)
-                    missile_vel_w_mps = missile.get_property_value(c.velocities_w_mps)
-                    missile_vel_vc_mps = missile.get_property_value(c.velocities_vc_mps)
-
-                    logging.debug(f"Missile {missile.uid} Pos: Long={missile_pos[0]:.4f} deg, "
-                                f"Lat={missile_pos[1]:.4f} deg, Alt={missile_pos[2]:.2f} m | "
-                                f"Vel(Body): U={missile_vel_u_mps:.2f} m/s, V={missile_vel_v_mps:.2f} m/s, "
-                                f"W={missile_vel_w_mps:.2f} m/s, VC={missile_vel_vc_mps:.2f} m/s")
 
                     # Log missile position: Longitude, Latitude, Altitude (meters)
                     logging.debug(f"Missile {missile.uid} Position: Long={missile_pos[0]:.4f} deg, "

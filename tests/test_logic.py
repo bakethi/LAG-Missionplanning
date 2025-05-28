@@ -78,7 +78,7 @@ def run_test_logic():
         action = np.array([env.action_space.sample()])
         # If you've modified OpStory01_task.py to have a 5th action for firing:
         # Example to force fire a missile after a certain number of steps:
-        if step_num == 100:
+        if step_num == 0:
             logger.info("\n--- FORCING MISSILE FIRE AT STEP 100 (if action space supports it) ---")
             # Assuming action_space.nvec for aileron, elevator, rudder, throttle, fire_weapon
             # And 'fire_weapon' is the last discrete action with 2 options (0=no_fire, 1=fire)

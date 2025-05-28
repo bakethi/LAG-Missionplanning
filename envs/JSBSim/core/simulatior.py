@@ -343,13 +343,15 @@ class AircraftSimulator(BaseSimulator):
                 missile = MissileSimulator.create(self, target_sim, new_missile_uid)
             else:
                 logging.error(f"Unsupported missile target type: {type(target_sim)}")
-                return # Do not fire if target type is unknown
+                return None# Do not fire if target type is unknown
 
             self.launch_missiles.append(missile)
             self.num_left_missiles -= 1
             logging.info(f"Agent {self.uid} fired missile {missile.uid} at target {target_sim.uid}. Missiles left: {self.num_left_missiles}")
+            return missile
         else:
             logging.info(f"Agent {self.uid} has no missiles left to fire.")
+            return None
 
 
 class MissileSimulator(BaseSimulator):
