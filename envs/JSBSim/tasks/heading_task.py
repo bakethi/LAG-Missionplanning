@@ -3,6 +3,7 @@ from gymnasium import spaces
 from .task_base import BaseTask
 from ..core.catalog import Catalog as c
 from ..reward_functions import AltitudeReward, HeadingReward
+from ..reward_functions import ProximityToAirbaseReward
 from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout, UnreachHeading
 from ..termination_conditions import AirBaseDestroyedTermination, AgentTooFarFromObjectiveTermination 
 
@@ -17,6 +18,7 @@ class HeadingTask(BaseTask):
         self.reward_functions = [
             HeadingReward(self.config),
             AltitudeReward(self.config),
+            ProximityToAirbaseReward(self.config),
         ]
         self.termination_conditions = [
             UnreachHeading(self.config),
