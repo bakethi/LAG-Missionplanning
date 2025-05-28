@@ -440,8 +440,8 @@ class ExtraCatalog(Property, Enum):
         a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         distance = R * c
-        
-        if distance > 100000:
+
+        if distance > 100000000:
             sim.set_property_value(ExtraCatalog.detect_agent_too_far_state, 1)
 
     
