@@ -5,7 +5,7 @@ from ..core.catalog import Catalog as c
 from ..reward_functions import AltitudeReward, HeadingReward
 from ..reward_functions import ProximityToAirbaseReward
 from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout, UnreachHeading
-from ..termination_conditions import AirBaseDestroyedTermination, AgentTooFarFromObjectiveTermination 
+from ..termination_conditions import AirBaseDestroyedTermination, AgentTooFar 
 
 
 class HeadingTask(BaseTask):
@@ -26,7 +26,7 @@ class HeadingTask(BaseTask):
             Overload(self.config),
             LowAltitude(self.config),
             AirBaseDestroyedTermination(self.config), 
-            AgentTooFarFromObjectiveTermination(self.config),
+            AgentTooFar(self.config),
         ]
 
     @property
