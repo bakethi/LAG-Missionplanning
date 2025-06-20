@@ -2,10 +2,10 @@ import numpy as np
 from gymnasium import spaces
 from .task_base import BaseTask
 from ..core.catalog import Catalog as c
-from ..reward_functions import AltitudeReward, HeadingReward
-from ..reward_functions import ProximityToAirbaseReward, DistanceToWaypointReward
-from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout, UnreachHeading
-from ..termination_conditions import AirBaseDestroyedTermination, AgentTooFar 
+from ..reward_functions import AltitudeReward, AttitudeReward
+from ..reward_functions import DistanceToWaypointReward
+from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout
+from ..termination_conditions import AgentTooFar 
 
 
 class ReachWaypointTask(BaseTask):
@@ -16,18 +16,17 @@ class ReachWaypointTask(BaseTask):
         super().__init__(config)
 
         self.reward_functions = [
-            #HeadingReward(self.config),
             AltitudeReward(self.config),
             DistanceToWaypointReward(self.config),
-            #ProximityToAirbaseReward(self.config),
+            AttitudeReward(self.config),
         ]
         self.termination_conditions = [
             #UnreachHeading(self.config),
             ExtremeState(self.config),
             Overload(self.config),
-            LowAltitude(self.config),
-            #AirBaseDestroyedTermination(self.config), 
+            LowAltitude(self.config), 
             AgentTooFar(self.config),
+            Timeout(self.config),
         ]
 
     @property
