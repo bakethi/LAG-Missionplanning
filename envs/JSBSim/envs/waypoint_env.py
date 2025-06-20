@@ -1,6 +1,7 @@
 from envs.JSBSim.human_task.HumanFreeFlyTask import HumanFreeFlyTask
 from .env_base import BaseEnv
 from ..tasks.reach_waypoint_task import ReachWaypointTask
+import numpy as np
 
 
 class WaypointEnv(BaseEnv):
@@ -22,17 +23,37 @@ class WaypointEnv(BaseEnv):
         else:
             raise NotImplementedError(f'Unknown taskname: {taskname}')
 
-    def load_waypoint(self):
-        waypoint_configs = getattr(self.config, 'waypoint', None)
-        self.waypoints = []
+    def load_waypoints(self):
+        waypoint_configs = getattr(self.config, 'waypoint_configs', None)
+        self._waypoints = []
         if waypoint_configs is not None:
-            for wp_cfg in waypoint_configs:
-                waypoint = {
-                    'longitude': wp_cfg.get('longitude', 120.0),
-                    'latitude': wp_cfg.get('latitude', 60.0),
-                    'altitude': wp_cfg.get('altitude', 0.0)
-                }
-                self.waypoints.append(waypoint)
+            for wp_id, wp_cfg in waypoint_configs.items():
+                color = wp_cfg.get('color', 'Green')
+                type = wp_cfg.get('type', 'Navaid+Static+Waypoint')
+                init_state = wp_cfg.get('init_state', {})
+
+                position = self.geodetic_to_neu(
+                    init_state.get('waypoint/longitude-geod-deg', 120.1),
+                    init_state.get('waypoint/latitude-geod-deg', 60.1),
+                    init_state.get('waypoint/altitude-ft', 4000.0) * 0.3048
+                )
+
+                self._waypoints.append({
+                    'uid': wp_id,
+                    'color': color,
+                    'type': type,
+                    'position': position,
+                    'init_state': init_state
+                })
+
+    @property
+    def waypoints(self):
+        """
+        Get the list of waypoints.
+        Returns:
+            list: List of waypoints with their properties.
+        """
+        return self._waypoints
 
     def render_waypoint(self, uid, position, color, model, type_, filepath=None):
         """
@@ -61,14 +82,29 @@ class WaypointEnv(BaseEnv):
     def neu_to_geodetic(self, north, east, up):
         # Implement or import this conversion as needed
         from ..utils.utils import NEU2LLA
-        return NEU2LLA(north, east, up, 120.5, 60.5, 0.0)
-    
+        return NEU2LLA(north, east, up, 120.0, 60.0, 0.0)
 
     def geodetic_to_neu(self, lon, lat, alt):
         # Implement or import this conversion as needed
         from ..utils.utils import LLA2NEU
-        return LLA2NEU(lon, lat, alt, 120.5, 60.5, 0.0)
-
+        return LLA2NEU(lon, lat, alt, 120.0, 60.0, 0.0)
+    
+    def compute_distance_to_waypoint(self, agent_id):
+        """
+        Compute the distance from the agent to the nearest waypoint.
+        Args:
+            agent_id (str): The ID of the agent.
+        Returns:
+            float: Distance to the nearest waypoint in meters.
+        """
+        # distance in 2D (ignoring altitude)
+        self.load_waypoints()
+        agent_position = self.agents[agent_id].get_position()[:2]  # Get the agent's position (north, east)
+        if not self.waypoints:
+            return float('inf')
+        waypoint_position = self.waypoints[0]['position'][:2]
+        distance = np.linalg.norm(agent_position - waypoint_position)
+        return distance
 
     def reset(self):
         self.current_step = 0
