@@ -19,39 +19,24 @@ class DistanceToWaypointReward(BaseRewardFunction):
         distance = np.linalg.norm(agent_position - waypoint_position)  # meters
 
         # Define a "success" radius and battlefield max diagonal
-        success_radius = 500.0
+        success_radius = 100.0
         max_distance = 70710.0  # battlefield diagonal ~ sqrt(50km^2 + 50km^2)
 
         Pv = 0.
         punish_factor = 1.0
 
         if distance <= success_radius:
-            Pv = +10.0
+            Pv = +0.0
             logging.info(f'agent[{agent_id}] reached waypoint at distance {distance:.1f}m')
-        #    print(f'>>>>>>agent[{agent_id}] reached waypoint at distance {distance:.1f}m')
-        #elif distance < 1000.0:
-        #    Pv = +5.0
-        #    logging.info(f'agent[{agent_id}] close to waypoint at distance {distance:.1f}m')
-        #elif distance < 2000.0:
-        #    Pv = +2.0
-            logging.info(f'agent[{agent_id}] near waypoint at distance {distance:.1f}m')
         elif distance > 200000.0:
-            Pv = -5.0
+            Pv = -2.0
         else:
             Pv = -punish_factor * ((distance - success_radius) / max_distance)
 
-            #angle = self.compute_angle_to_waypoint(env, agent_id)
-            #angle_factor =  np.cos(angle) 
-            #Pv += angle_factor
-            ## was rewarding for being parallel to the waypoint, but it doesn't make sense in this context
-
-            # alignment
-            alignment_score = self.get_alignment_to_waypoint(env, agent_id) # 0 for facing the waypoint, -1 for facing opposite
-            # reward for being within 18 degrees of the waypoint direction
-            if alignment_score > -0.1:
-                Pv += 1.0
-            Pv += alignment_score
-            #logging.info(f'agent[{agent_id}] distance to waypoint: {distance:.1f}m, Pv: {Pv:.3f}, alignment: {alignment_score:.3f}')
+        # alignment
+        alignment_score = self.get_alignment_to_waypoint(env, agent_id) # 0 for facing the waypoint, -1 for facing opposite        
+        Pv += alignment_score
+        #logging.info(f'agent[{agent_id}] distance to waypoint: {distance:.1f}m, Pv: {Pv:.3f}, alignment: {alignment_score:.3f}')
 
 
 
