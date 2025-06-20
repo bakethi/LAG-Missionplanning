@@ -63,7 +63,7 @@ class ReachWaypointTask(BaseTask):
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(12,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(14,))
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle
@@ -88,7 +88,7 @@ class ReachWaypointTask(BaseTask):
             11. ego_vc                 (unit: mh)
         """
         obs = np.array(env.agents[agent_id].get_property_values(self.state_var))
-        norm_obs = np.zeros(12)
+        norm_obs = np.zeros(14)
         norm_obs[0] = obs[0] / 1000         # 0. ego delta altitude (unit: 1km)
         norm_obs[1] = obs[1] / 180 * np.pi  # 1. ego delta heading  (unit rad)
         norm_obs[2] = obs[2] / 340          # 2. ego delta velocities_u (unit: mh)
@@ -101,26 +101,38 @@ class ReachWaypointTask(BaseTask):
         norm_obs[9] = obs[7] / 340          # 9. ego_v_east     (unit: mh)
         norm_obs[10] = obs[8] / 340         # 10. ego_v_down    (unit: mh)
         norm_obs[11] = obs[9] / 340         # 11. ego_vc        (unit: mh)
+
+        distance = self.compute_distance_to_waypoint(env, agent_id)
+        alignment = self.get_alignment_to_waypoint(env, agent_id)
+        norm_obs[12] = distance / 70710  # 12. distance to waypoint (normalized by battlefield diagonal)
+        norm_obs[13] = alignment  # 13. angle to waypoint (unit: rad)
+
         norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
         return norm_obs
 
 
     def compute_distance_to_waypoint(self, env, agent_id):
-        """
-        Compute the distance from the agent to the waypoint.
-        """
-        agent_position = env.agents[agent_id].get_position()
-        distance = np.linalg.norm(agent_position - self.waypoint)
+        env.load_waypoints()  # Ensure waypoints are loaded
+        agent_position = env.agents[agent_id].get_position()[:2]
+        waypoint_position = env.waypoints[0]['position'][:2]
+        distance = np.linalg.norm(agent_position - waypoint_position)
+        #print(f"distance: {distance}")
         return distance
     
-    def compute_angle_to_waypoint(self, env, agent_id):
-        """
-        Compute the angle from the agent to the waypoint.
-        """
-        agent_position = env.agents[agent_id].get_position()
-        vector_to_waypoint = self.waypoint - agent_position
-        angle = np.arctan2(vector_to_waypoint[1], vector_to_waypoint[0])
-        return angle
+    def get_alignment_to_waypoint(self, env, agent_id):
+        agent = env.agents[agent_id]
+        agent_heading = agent.get_property_value(c.attitude_psi_rad)  # yaw in radians
+
+        waypoint_position = env.waypoints[0]['position'][:2]
+        agent_position = agent.get_position()[:2]
+
+        delta = waypoint_position - agent_position
+        waypoint_yaw = np.arctan2(delta[1], delta[0])
+
+        yaw_diff = waypoint_yaw - agent_heading
+        yaw_diff = (yaw_diff + np.pi) % (2 * np.pi) - np.pi  # Normalize to [-π, π]
+
+        return yaw_diff
     
     
     def normalize_action(self, env, agent_id, action):
