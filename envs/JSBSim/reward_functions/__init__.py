@@ -6,3 +6,4 @@ from .heading_reward import HeadingReward
 from .missile_posture_reward import MissilePostureReward
 from .shoot_penalty_reward import ShootPenaltyReward
 from .proximity_to_airbase_reward import ProximityToAirbaseReward
+from .distance_to_waypoint import DistanceToWaypointReward
