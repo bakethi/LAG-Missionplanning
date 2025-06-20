@@ -444,7 +444,41 @@ class ExtraCatalog(Property, Enum):
         if distance > 100000000:
             sim.set_property_value(ExtraCatalog.detect_agent_too_far_state, 1)
 
-    
+
+    def update_agent_reached_waypoint_state(sim):
+        """
+        Check if the agent has reached the waypoint and update the state accordingly.
+        """ 
+        success_radius = 500  # meters
+        distance = ExtraCatalog.find_distance_to_waypoint(sim)
+        if distance < success_radius:
+            sim.set_property_value(ExtraCatalog.detect_agent_reached_waypoint_state, 1)
+
+    def update_agent_too_far_waypoint_state(sim):
+        """
+        Check if the agent is too far from the waypoint and update the state accordingly.
+        """
+        distance = ExtraCatalog.find_distance_to_waypoint(sim)
+        if distance > 100000000:
+            sim.set_property_value(ExtraCatalog.detect_agent_too_far_waypoint_state, 1)
+
+    @staticmethod
+    def find_distance_to_waypoint(sim):
+        """
+        Calculate the distance to the waypoint.
+        """
+        agent_position = sim.get_property_value(JsbsimCatalog.position_lat_geod_deg), sim.get_property_value(JsbsimCatalog.position_long_gc_deg)
+        waypoint_position = sim.get_property_value(ExtraCatalog.waypoint_latitude_geod_deg), sim.get_property_value(ExtraCatalog.waypoint_longitude_geod_deg)
+        # use 2D distance calculation
+        R = 6371000 # Earth radius in meters
+        phi1 = math.radians(agent_position[0])
+        phi2 = math.radians(waypoint_position[0])
+        dphi = math.radians(waypoint_position[0] - agent_position[0])
+        dlambda = math.radians(waypoint_position[1] - agent_position[1])
+        a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        distance = R * c
+        return distance
 
     # position and attitude
 
@@ -535,6 +569,18 @@ class ExtraCatalog(Property, Enum):
         update=update_enemy_base_state,
     )
 
+    waypoint_latitude_geod_deg = Property(
+        "waypoint/latitude-geod-deg", "waypoint geocentric latitude [deg]", -90, 90
+    )
+    waypoint_longitude_geod_deg = Property(
+        "waypoint/longitude-geod-deg", "waypoint geocentric longitude [deg]", -180, 180
+    )
+    waypoint_altitude_ft = Property(
+        "waypoint/altitude-ft", "waypoint altitude MSL [ft]", JsbsimCatalog.position_h_sl_ft.min, JsbsimCatalog.position_h_sl_ft.max
+    )
+
+
+
     detect_agent_too_far_state = Property(
         "detect/agent-too-far-state",
         "detect agent too far from the target",
@@ -543,6 +589,26 @@ class ExtraCatalog(Property, Enum):
         spaces=Discrete,
         access="R",
         update=update_agent_too_far_state,
+    )
+
+    detect_agent_reached_waypoint_state = Property(
+        "detect/agent-reached-waypoint-state",
+        "detect agent reached waypoint",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_agent_reached_waypoint_state,
+    )
+
+    detect_agent_too_far_waypoint_state = Property(
+        "detect/agent-too-far-waypoint-state",
+        "detect agent too far from waypoint",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_agent_too_far_waypoint_state,
     )
 
     # detect functions
