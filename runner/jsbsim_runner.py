@@ -163,12 +163,8 @@ class JSBSimRunner(Runner):
                     log_msg = sim.log()
                     if log_msg is not None:
                         render_data.append(log_msg + "\n")
-
                 render_data_str = "".join(render_data)
-                try:
-                    self.tacview.send_data_to_client(render_data_str)
-                except Exception as e:
-                    logging.error(f"Tacview rendering error: {e}")
+                self.render_with_tacview(render_data_str)
                     
             self.timestamp += 0.2   # step 0.2s
             eval_cumulative_rewards += eval_rewards
