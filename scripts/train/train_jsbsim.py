@@ -181,5 +181,28 @@ def main(args):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    
+    log_file_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "training.log"
+    )
+
+    file_handler = logging.FileHandler(log_file_path, mode='w')
+    stream_handler = logging.StreamHandler(sys.stdout)
+
+    file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    stream_formatter = logging.Formatter("%(message)s")
+
+    file_handler.setFormatter(file_formatter)
+    stream_handler.setFormatter(stream_formatter)
+
+    # Set up logging
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    logger.handlers = []
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+
     main(sys.argv[1:])
