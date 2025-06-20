@@ -55,6 +55,8 @@ def make_eval_env(all_args):
                 env = SingleControlEnv(all_args.scenario_name)
             elif all_args.env_name == "MultipleCombat":
                 env = MultipleCombatEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachWaypoint":
+                env = WaypointEnv(all_args.scenario_name)
             else:
                 logging.error("Can not support the " + all_args.env_name + "environment.")
                 raise NotImplementedError
