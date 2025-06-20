@@ -14,6 +14,7 @@ class AltitudeReward(BaseRewardFunction):
         self.safe_altitude = getattr(self.config, f'{self.__class__.__name__}_safe_altitude', 4.0)         # km
         self.danger_altitude = getattr(self.config, f'{self.__class__.__name__}_danger_altitude', 3.5)     # km
         self.Kv = getattr(self.config, f'{self.__class__.__name__}_Kv', 0.2)     # mh
+        self.target_range = [5000, 9000]  # m
 
         self.reward_item_names = [self.__class__.__name__ + item for item in ['', '_Pv', '_PH']]
 
@@ -36,5 +37,12 @@ class AltitudeReward(BaseRewardFunction):
         PH = 0.
         if ego_z <= self.danger_altitude:
             PH = np.clip(ego_z / self.danger_altitude, 0., 1.) - 1. - 1.
+        
+        # Check if the altitude is within the target range
+        if not (self.target_range[0] <= ego_z * 1000 <= self.target_range[1]):
+            PH -= 0.1
+
+        #print(f"Agent {agent_id} altitude: {ego_z:.2f}km, Pv: {Pv:.2f}, PH: {PH:.2f}")
+
         new_reward = Pv + PH
         return self._process(new_reward, agent_id, (Pv, PH))
