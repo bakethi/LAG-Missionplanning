@@ -101,37 +101,13 @@ class ReachWaypointTask(BaseTask):
         norm_obs[10] = obs[8] / 340         # 10. ego_v_down    (unit: mh)
         norm_obs[11] = obs[9] / 340         # 11. ego_vc        (unit: mh)
 
-        distance = self.compute_distance_to_waypoint(env, agent_id)
-        alignment = self.get_alignment_to_waypoint(env, agent_id)
+        distance = env.compute_distance_to_waypoint(agent_id)
+        alignment = env.get_alignment_to_waypoint(agent_id)
         norm_obs[12] = distance / 70710  # 12. distance to waypoint (normalized by battlefield diagonal)
         norm_obs[13] = alignment  # 13. angle to waypoint (unit: rad)
 
         norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
         return norm_obs
-
-
-    def compute_distance_to_waypoint(self, env, agent_id):
-        env.load_waypoints()  # Ensure waypoints are loaded
-        agent_position = env.agents[agent_id].get_position()[:2]
-        waypoint_position = env.waypoints[0]['position'][:2]
-        distance = np.linalg.norm(agent_position - waypoint_position)
-        #print(f"distance: {distance}")
-        return distance
-    
-    def get_alignment_to_waypoint(self, env, agent_id):
-        agent = env.agents[agent_id]
-        agent_heading = agent.get_property_value(c.attitude_psi_rad)  # yaw in radians
-
-        waypoint_position = env.waypoints[0]['position'][:2]
-        agent_position = agent.get_position()[:2]
-
-        delta = waypoint_position - agent_position
-        waypoint_yaw = np.arctan2(delta[1], delta[0])
-
-        yaw_diff = waypoint_yaw - agent_heading
-        yaw_diff = (yaw_diff + np.pi) % (2 * np.pi) - np.pi  # Normalize to [-π, π]
-
-        return yaw_diff
     
     
     def normalize_action(self, env, agent_id, action):

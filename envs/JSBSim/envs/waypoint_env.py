@@ -1,7 +1,8 @@
 from envs.JSBSim.human_task.HumanFreeFlyTask import HumanFreeFlyTask
 from .env_base import BaseEnv
 from ..tasks.reach_waypoint_task import ReachWaypointTask
-import numpy as np
+from ..core.catalog import Catalog as c 
+import math
 
 
 class WaypointEnv(BaseEnv):
@@ -43,7 +44,10 @@ class WaypointEnv(BaseEnv):
                     'color': color,
                     'type': type,
                     'position': position,
-                    'init_state': init_state
+                    'init_state': init_state,
+                    'geod_position': (init_state.get('waypoint/longitude-geod-deg', 120.1),
+                                      init_state.get('waypoint/latitude-geod-deg', 60.1),
+                                      init_state.get('waypoint/altitude-ft', 4000.0) * 0.3048)
                 })
 
     @property
@@ -79,6 +83,22 @@ class WaypointEnv(BaseEnv):
         with open(filepath, "a") as f:
             f.write(line)
 
+    def load_waypoints_into_simulator(self):
+        """
+        Load the first waypoint into the simulator property catalog.
+        """
+        self.load_waypoints()  # Load from config if not already
+
+        if not self._waypoints:
+            return
+
+        # Set the first waypoint (only one supported for now)
+        wp = self._waypoints[0]
+        for sim in self.agents.values():  # Assuming all agents use same waypoint
+            sim.set_property_value(c.waypoint_longitude_geod_deg, wp["geod_position"][0])
+            sim.set_property_value(c.waypoint_latitude_geod_deg, wp["geod_position"][1])
+            sim.set_property_value(c.waypoint_altitude_ft, wp["geod_position"][2] / 0.3048)
+
     def neu_to_geodetic(self, north, east, up):
         # Implement or import this conversion as needed
         from ..utils.utils import NEU2LLA
@@ -99,12 +119,51 @@ class WaypointEnv(BaseEnv):
         """
         # distance in 2D (ignoring altitude)
         self.load_waypoints()
-        agent_position = self.agents[agent_id].get_position()[:2]  # Get the agent's position (north, east)
+        agent_position = self.agents[agent_id].get_geodetic()
         if not self.waypoints:
             return float('inf')
-        waypoint_position = self.waypoints[0]['position'][:2]
-        distance = np.linalg.norm(agent_position - waypoint_position)
+        # haversine formula to calculate distance
+        # Extract lat/lon in degrees
+        agent_lat = agent_position[1]  # latitude in degrees
+        agent_lon = agent_position[0]  # longitude in degrees
+        wp_lat = self.waypoints[0]['geod_position'][1]  # waypoint latitude in degrees
+        wp_lon =   self.waypoints[0]['geod_position'][0]  # waypoint longitude in degrees
+
+        # Convert to radians
+        phi1 = math.radians(agent_lat)
+        phi2 = math.radians(wp_lat)
+        dphi = math.radians(wp_lat - agent_lat)
+        dlambda = math.radians(wp_lon - agent_lon)
+
+        # Haversine formula
+        a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        R = 6371000  # Earth radius in meters
+        distance = R * c
+
         return distance
+    
+    def get_alignment_to_waypoint(self, agent_id):
+        """
+        Get the alignment of the agent to the nearest waypoint.
+        Args:
+            agent_id (str): The ID of the agent.
+        Returns:
+            float: Alignment score, 0 when facing the waypoint, -1 when facing opposite.
+        """
+        agent = self.agents[agent_id]
+        agent_heading = agent.get_property_value(c.attitude_psi_rad)
+        # Extract waypoint position
+        waypoint_position = self.waypoints[0]['position'][:2]  # Only
+        # x/y or north/east
+        agent_position = agent.get_position()[:2]  # Only x/y or north/e
+        delta = waypoint_position - agent_position
+        waypoint_yaw = math.atan2(delta[1], delta[0])
+        yaw_diff = waypoint_yaw - agent_heading
+        yaw_diff = (yaw_diff + math.pi) % (2 * math.pi) - math.pi
+        
+        return yaw_diff 
+
 
     def reset(self):
         self.current_step = 0
@@ -135,3 +194,4 @@ class WaypointEnv(BaseEnv):
         for idx, sim in enumerate(self.agents.values()):
             sim.reload(self.init_states[idx])
         self._tempsims.clear()
+        self.load_waypoints_into_simulator()
