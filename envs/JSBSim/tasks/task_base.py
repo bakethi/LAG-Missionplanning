@@ -87,19 +87,15 @@ class BaseTask(ABC):
             reward += reward_function.get_reward(self, env, agent_id)
         return reward, info
 
-    def get_termination(self, env, agent_id, info={}) -> Tuple[bool, dict]:
+    def get_termination(self, env, agent_id, info={}) -> Tuple[bool, bool, dict]:
         """
         Aggregate termination conditions
 
-        Args:
-            env: environment instance
-            agent_id: current agent id
-            info: additional info
-
         Returns:
             (tuple):
-                done(bool): whether the episode has terminated
-                info(dict): additional info
+                done (bool): whether the episode has terminated
+                success (bool): whether the termination was successful
+                info (dict): additional info
         """
         done = False
         success = True
@@ -109,7 +105,8 @@ class BaseTask(ABC):
             success = success and s
             if done:
                 break
-        return done, info
+        return done, success, info
+
 
     def get_obs(self, env, agent_id):
         """Extract useful informations from environment for specific agent_id.
