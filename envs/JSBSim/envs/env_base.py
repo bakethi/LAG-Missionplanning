@@ -3,6 +3,7 @@ import time
 import gymnasium
 from gymnasium.utils import seeding
 import numpy as np
+from datetime import datetime
 from typing import Dict, Any, Tuple
 from ..core.simulatior import AircraftSimulator, BaseSimulator, StaticSimulator, WaypointSimulator
 from ..tasks.task_base import BaseTask
@@ -184,7 +185,7 @@ class BaseEnv(gymnasium.Env):
 
         dones = {}
         for agent_id in self.agents.keys():
-            done, info = self.task.get_termination(self, agent_id, info)
+            done, sucess, info = self.task.get_termination(self, agent_id, info)
             dones[agent_id] = [done]
 
         rewards = {}
@@ -248,7 +249,7 @@ class BaseEnv(gymnasium.Env):
                 with open(filepath, mode='w', encoding='utf-8-sig') as f:
                     f.write("FileType=text/acmi/tacview\n")
                     f.write("FileVersion=2.1\n")
-                    f.write("0,ReferenceTime=2020-04-01T00:00:00Z\n")
+                    f.write(f"0,ReferenceTime={datetime.today().strftime('%Y-%m-%d')}T00:00:00Z\n")
                 self._create_records = True
             with open(filepath, mode='a', encoding='utf-8-sig') as f:
                 timestamp = self.current_step * self.time_interval
