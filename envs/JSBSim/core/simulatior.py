@@ -579,36 +579,72 @@ class StaticSimulator(BaseSimulator):
             print(pos)
             return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Length=1000.0,Width=1000.0,Height=1000.0,Name={self.model},Color={self.color},Type={self.type}"
         return ""
-    
+
+
 class WaypointSimulator(BaseSimulator):
-    def __init__(self, uid, color, model, type, init_state=None, origin=(120.0, 60.0, 0.0)):
+    def __init__(self, uid, color, model, type, active, init_state=None, origin=(120.0, 60.0, 0.0)):
         super().__init__(uid, color, dt=0)
         self.model = model
         self.type = type
         self.origin = origin
+        self.active = active
         self.rendered = False
-        # Set position from init_state if provided
-        if init_state is not None:
-            lon = init_state.get('waypoint/longitude-geod-deg', origin[0])
-            lat = init_state.get('waypoint/latitude-geod-deg', origin[1])
-            alt = init_state.get('waypoint/altitude-ft', origin[2]) * 0.3048  # ft to m
-            self._position = np.array([lon, lat, alt])
 
+        # Origin
+        self.lon0, self.lat0, self.alt0 = origin
+
+        # Default geodetic & NEU
+        lon, lat, alt = origin
+        if init_state is not None:
+            lon = init_state.get('waypoint/longitude-geod-deg', lon)
+            lat = init_state.get('waypoint/latitude-geod-deg', lat)
+            alt = init_state.get('waypoint/altitude-ft', alt) * 0.3048  # ft -> m
+            active = init_state.get('waypoint/active', False)
+        self._geodetic = np.array([lon, lat, alt])
+        self._position = LLA2NEU(lon, lat, alt, self.lon0, self.lat0, self.alt0)
+        self.active = active 
+
+    def get_property_value(self, prop: Property):
+        if prop.name_jsbsim == "waypoint/longitude-geod-deg":
+            return self._geodetic[0]
+        elif prop.name_jsbsim == "waypoint/latitude-geod-deg":
+            return self._geodetic[1]
+        elif prop.name_jsbsim == "waypoint/altitude-ft":
+            return self._geodetic[2] / 0.3048
+        elif prop.name_jsbsim == "waypoint/altitude-m":
+            return self._geodetic[2]
         else:
-            self._position = np.zeros(3)
+            raise ValueError(f"Unsupported property for WaypointSimulator: {prop.name_jsbsim}")
+        
+    @property
+    def is_active(self):
+        """Check if the waypoint is active."""
+        return self.active
+    
+    @is_active.setter
+    def is_active(self, value: bool):
+        """Set the active status of the waypoint."""
+        self.active = value
 
     def run(self, **kwargs):
         pass
+
     def close(self):
         pass
+
     def log(self):
-        if not self.rendered:
-            self.rendered = True
-            # Render the static base to the ACMI file
-            pos = self._position
-            
-            return f"{self.uid},T={pos[0]}|{pos[1]}|{pos[2]}|0|0|0,Color={self.color},Type=Navaid+Static+Waypoint"
+        if self.active:
+            if not self.rendered:
+                self.rendered = True
+                lon, lat, alt = self._geodetic
+                return f"{self.uid},T={lon}|{lat}|{alt}|0|0|0,Color={self.color},Type=Navaid+Static+Waypoint, Visible=1"
+        else:
+            if self.rendered:
+                self.rendered = False  # Allow re-rendering in the future
+                lon, lat, alt = self._geodetic
+                return f"{self.uid},T={lon}|{lat}|{alt}|0|0|0,Color={self.color},Type=Navaid+Static+Waypoint,Visible=0"
         return ""
+
 
         
 
