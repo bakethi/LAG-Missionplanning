@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from envs.JSBSim.envs import WaypointEnv
 from algorithms.ppo.ppo_actor import PPOActor
-import logging
+import logging, random
 logging.basicConfig(level=logging.DEBUG)
 
 class Args:
@@ -30,7 +30,7 @@ policy_index = "latest"
 run_dir = "../scripts/results/ReachWaypoint/1/waypoint/ppo/v1/latest"
 experiment_name = run_dir.split('/')[-4]
 env = WaypointEnv("1/waypoint")
-env.seed(0)
+env.seed(random.randint(0, 5))
 
 # === POLICY ===
 args = Args()
