@@ -38,8 +38,8 @@ static_base_configs: {
     type: Ground+Static+Building,
     model: Gas Platform,
     init_state: {
-      enemy_base/longitude-geod-deg: 120.5,
-      enemy_base/latitude-geod-deg: 60.5,
+      enemy_base/longitude-geod-deg: 120.4,
+      enemy_base/latitude-geod-deg: 60.3,
       enemy_base/altitude-ft: 2500,
     },
   }
@@ -55,12 +55,59 @@ waypoint_configs: {
     type: Navaid+Static+Waypoint,
     model: Waypoint,
     init_state: {
-      waypoint/longitude-geod-deg: 119.8,
-      waypoint/latitude-geod-deg: 60.2,
+      waypoint/longitude-geod-deg: 120.0,
+      waypoint/latitude-geod-deg: 59.6,
       waypoint/altitude-ft: 4000,
+      waypoint/active: 0,
     },
-  }
+  },
+  100000002: {
+    color: Red,
+    type: Navaid+Static+Waypoint,
+    model: Waypoint,
+    init_state: {
+      waypoint/longitude-geod-deg: 119.5,
+      waypoint/latitude-geod-deg: 59.8,
+      waypoint/altitude-ft: 2500,
+      waypoint/active: 0,
+    },
+  },
+  100000003: {
+    color: Blue,
+    type: Navaid+Static+Waypoint,
+    model: Waypoint,
+    init_state: {
+      waypoint/longitude-geod-deg: 120.5,
+      waypoint/latitude-geod-deg: 60.2,
+      waypoint/altitude-ft: 3200,
+      waypoint/active: 0,
+    },
+  },
+  100000004: {
+    color: Green,
+    type: Navaid+Static+Waypoint,
+    model: Waypoint,
+    init_state: {
+      waypoint/longitude-geod-deg: 120.7,
+      waypoint/latitude-geod-deg: 59.9,
+      waypoint/altitude-ft: 1800,
+      waypoint/active: 0,
+    },
+  },
+  100000005: {
+    color: Red,
+    type: Navaid+Static+Waypoint,
+    model: Waypoint,
+    init_state: {
+      waypoint/longitude-geod-deg: 119.9,
+      waypoint/latitude-geod-deg: 60.3,
+      waypoint/altitude-ft: 2700,
+      waypoint/active: 0,
+    },
+  },
 }
+
+
 # (longitude, latitude, altitude)
 battle_field_center: [120.0, 60.0, 0.0]
 
