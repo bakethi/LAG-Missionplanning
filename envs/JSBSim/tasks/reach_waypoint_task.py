@@ -5,7 +5,7 @@ from ..core.catalog import Catalog as c
 from ..reward_functions import AltitudeReward, AttitudeReward
 from ..reward_functions import DistanceToWaypointReward
 from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout
-from ..termination_conditions import AgentTooFar 
+from ..termination_conditions import AgentTooFar , UnreachWaypoint
 
 
 class ReachWaypointTask(BaseTask):
@@ -27,6 +27,7 @@ class ReachWaypointTask(BaseTask):
             LowAltitude(self.config), 
             AgentTooFar(self.config),
             Timeout(self.config),
+            UnreachWaypoint(self.config),
         ]
 
     @property
