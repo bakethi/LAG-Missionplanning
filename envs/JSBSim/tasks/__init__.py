@@ -3,3 +3,4 @@ from .singlecombat_task import SingleCombatTask, HierarchicalSingleCombatTask
 from .singlecombat_with_missle_task import SingleCombatDodgeMissileTask, HierarchicalSingleCombatDodgeMissileTask, HierarchicalSingleCombatShootTask, SingleCombatShootMissileTask
 from .OpStory01_task import AirbaseAttackTask
 from .reach_waypoint_task import ReachWaypointTask
+from .reach_base_task import ReachBaseTask
