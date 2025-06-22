@@ -45,6 +45,9 @@ static_base_configs: {
   }
 }
 
+# success radius
+success_radius: 250  # m
+
 # waypoint config
 waypoint_configs: {
   100000001: {
@@ -52,8 +55,8 @@ waypoint_configs: {
     type: Navaid+Static+Waypoint,
     model: Waypoint,
     init_state: {
-      waypoint/longitude-geod-deg: 120.1,
-      waypoint/latitude-geod-deg: 60.1,
+      waypoint/longitude-geod-deg: 119.8,
+      waypoint/latitude-geod-deg: 60.2,
       waypoint/altitude-ft: 4000,
     },
   }
