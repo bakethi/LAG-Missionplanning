@@ -55,7 +55,7 @@ class BaseEnv(gymnasium.Env):
     
     @property
     def waypoints(self) -> Dict[str, WaypointSimulator]:
-        return self._tempsims
+        return self._waypoint_sims
 
     @property
     def time_interval(self) -> int:
@@ -105,6 +105,7 @@ class BaseEnv(gymnasium.Env):
                 color=config.get("color", "Green"),
                 model=config.get("model", "Waypoint"),
                 type=config.get("type", "Navaid+Static+Waypoint"),
+                active=config.get("active", False),
                 init_state=config.get("init_state"),
                 origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
             )
