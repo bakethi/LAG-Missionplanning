@@ -94,6 +94,7 @@ class BaseEnv(gymnasium.Env):
                 color=config.get("color", "Blue"),
                 model=config.get("model", "Gas Platform"),
                 type=config.get("type", "Ground+Static+Building"),
+                active=config.get("active", False),
                 init_state=config.get("init_state"),
                 origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
             )
