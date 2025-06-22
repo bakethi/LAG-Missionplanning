@@ -13,7 +13,7 @@ import setproctitle
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from config import get_config
 from runner.share_jsbsim_runner import ShareJSBSimRunner
-from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv, WaypointEnv
+from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv, WaypointEnv, ReachBaseEnv
 from envs.env_wrappers import SubprocVecEnv, DummyVecEnv, ShareSubprocVecEnv, ShareDummyVecEnv
 from runner.tacview import Tacview
 
@@ -28,6 +28,8 @@ def make_train_env(all_args):
                 env = MultipleCombatEnv(all_args.scenario_name)
             elif all_args.env_name == "ReachWaypoint":
                 env = WaypointEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachBase":
+                env = ReachBaseEnv(all_args.scenario_name)
             else:
                 logging.error("Can not support the " + all_args.env_name + "environment.")
                 raise NotImplementedError
@@ -57,6 +59,8 @@ def make_eval_env(all_args):
                 env = MultipleCombatEnv(all_args.scenario_name)
             elif all_args.env_name == "ReachWaypoint":
                 env = WaypointEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachBase":
+                env = ReachBaseEnv(all_args.scenario_name)
             else:
                 logging.error("Can not support the " + all_args.env_name + "environment.")
                 raise NotImplementedError
