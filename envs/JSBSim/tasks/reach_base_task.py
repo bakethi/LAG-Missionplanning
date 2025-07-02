@@ -3,7 +3,7 @@ from gymnasium import spaces
 from .task_base import BaseTask
 from ..core.catalog import Catalog as c
 from ..reward_functions import AltitudeReward, AttitudeReward
-from ..reward_functions import DistanceToWaypointReward
+from ..reward_functions import DistanceToBaseReward
 from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout
 from ..termination_conditions import AgentTooFar , UnreachWaypoint
 
@@ -17,8 +17,9 @@ class ReachBaseTask(BaseTask):
 
         self.reward_functions = [
             AltitudeReward(self.config),
-            DistanceToWaypointReward(self.config),
+            DistanceToBaseReward(self.config),
             AttitudeReward(self.config),
+
         ]
         self.termination_conditions = [
             #UnreachHeading(self.config),
@@ -63,7 +64,7 @@ class ReachBaseTask(BaseTask):
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(14,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(17,))
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle
@@ -88,7 +89,7 @@ class ReachBaseTask(BaseTask):
             11. ego_vc                 (unit: mh)
         """
         obs = np.array(env.agents[agent_id].get_property_values(self.state_var))
-        norm_obs = np.zeros(14)
+        norm_obs = np.zeros(17)
         norm_obs[0] = obs[0] / 1000         # 0. ego delta altitude (unit: 1km)
         norm_obs[1] = obs[1] / 180 * np.pi  # 1. ego delta heading  (unit rad)
         norm_obs[2] = obs[2] / 340          # 2. ego delta velocities_u (unit: mh)
@@ -102,10 +103,21 @@ class ReachBaseTask(BaseTask):
         norm_obs[10] = obs[8] / 340         # 10. ego_v_down    (unit: mh)
         norm_obs[11] = obs[9] / 340         # 11. ego_vc        (unit: mh)
 
-        distance = env.compute_distance_to_waypoint(agent_id)
-        alignment = env.get_alignment_to_waypoint(agent_id)
-        norm_obs[12] = distance / 70710  # 12. distance to waypoint (normalized by battlefield diagonal)
-        norm_obs[13] = alignment  # 13. angle to waypoint (unit: rad)
+        distance_wp = env.compute_distance_to_waypoint(agent_id)
+        alignment_wp = env.get_alignment_to_waypoint(agent_id)
+
+        distance_base = env.compute_distance_to_base(agent_id)
+        alignment_base = env.get_alignment_to_base(agent_id)
+
+        reached_wp = getattr(env, "visited_waypoint", False)
+
+        norm_obs[12] = min(distance_wp / 70710, 1.0)  # 12. distance to waypoint (normalized by battlefield diagonal)
+        norm_obs[13] = - (1 - np.cos(alignment_wp)) / 2  # [-1, 0] 
+        norm_obs[14] = min(distance_base / 70710, 1.0)
+        norm_obs[15] = - (1 - np.cos(alignment_base)) / 2  # [-1, 0]
+        norm_obs[16] = reached_wp
+
+        
 
         norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
         return norm_obs
