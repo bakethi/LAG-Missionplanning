@@ -87,17 +87,17 @@ class BaseEnv(gymnasium.Env):
                 num_missiles=config.get("missile", 0)
             )
 
-        # Load static base objects
-        for uid, config in self.config.static_base_configs.items():
-            self._static_sims[uid] = StaticSimulator(
-                uid=uid,
-                color=config.get("color", "Blue"),
-                model=config.get("model", "Gas Platform"),
-                type=config.get("type", "Ground+Static+Building"),
-                active=config.get("active", False),
-                init_state=config.get("init_state"),
-                origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
-            )
+        # # Load static base objects
+        # for uid, config in self.config.static_base_configs.items():
+        #     self._static_sims[uid] = StaticSimulator(
+        #         uid=uid,
+        #         color=config.get("color", "Blue"),
+        #         model=config.get("model", "Gas Platform"),
+        #         type=config.get("type", "Ground+Static+Building"),
+        #         active=config.get("active", False),
+        #         init_state=config.get("init_state"),
+        #         origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
+        #     )
 
         #load waypoints
         for uid, config in self.config.waypoint_configs.items():    
@@ -112,7 +112,7 @@ class BaseEnv(gymnasium.Env):
             )
 
         # Merge both for rendering/logging
-        self._jsbsims = {**self._aircraft_sims, **self._static_sims, **self._waypoint_sims}
+        self._jsbsims = {**self._aircraft_sims, **self._waypoint_sims}
 
         # Determine ego/enemy IDs (only among aircraft)
         _default_team_uid = list(self._aircraft_sims.keys())[0][0]
@@ -173,7 +173,7 @@ class BaseEnv(gymnasium.Env):
         for agent_id in self.agents.keys():
             a_action = self.task.normalize_action(self, agent_id, action[agent_id])
             # 在 normalize_action 之后打印 a_action 的值
-            logging.debug(f"a_action: {a_action}")
+            #logging.debug(f"a_action: {a_action}")
             self.agents[agent_id].set_property_values(self.task.action_var, a_action)
         # run simulation
         for _ in range(self.agent_interaction_steps):
