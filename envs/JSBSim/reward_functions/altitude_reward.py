@@ -1,41 +1,40 @@
 import numpy as np
 from .reward_function_base import BaseRewardFunction
 
-
 class AltitudeReward(BaseRewardFunction):
     """
-    AltitudeReward
-    Punish if current fighter doesn't satisfy some constraints. Typically negative.
-    - Punishment of velocity when lower than safe altitude   (range: [-1, 0])
-    - Punishment of altitude when lower than danger altitude (range: [-1, 0])
+    AltitudeReward:
+    Penalizes the agent for:
+    - Descending below a safe altitude with significant vertical speed.
+    - Flying below a danger altitude.
+    - Severely penalizes if below a critical crash altitude.
     """
+
     def __init__(self, config):
         super().__init__(config)
-        self.safe_altitude = getattr(self.config, f'{self.__class__.__name__}_safe_altitude', 4.0)         # km
-        self.danger_altitude = getattr(self.config, f'{self.__class__.__name__}_danger_altitude', 3.5)     # km
-        self.Kv = getattr(self.config, f'{self.__class__.__name__}_Kv', 0.2)     # mh
+        self.safe_altitude = getattr(config, f'{self.__class__.__name__}_safe_altitude', 4.0)      # km
+        self.danger_altitude = getattr(config, f'{self.__class__.__name__}_danger_altitude', 3.5)  # km
+        self.altitude_limit = getattr(config, 'altitude_limit', 2500) / 1000                       # km
+        self.Kv = getattr(config, f'{self.__class__.__name__}_Kv', 0.2)                            # descent scale
+        self.max_penalty = 1.0
 
         self.reward_item_names = [self.__class__.__name__ + item for item in ['', '_Pv', '_PH']]
 
     def get_reward(self, task, env, agent_id):
-        """
-        Reward is the sum of all the punishments.
+        altitude_km = env.agents[agent_id].get_position()[-1] / 1000
+        vertical_speed_mach = env.agents[agent_id].get_velocity()[-1] / 340  # < 0 if descending
 
-        Args:
-            task: task instance
-            env: environment instance
+        Pv = 0.0
+        if altitude_km <= self.safe_altitude and vertical_speed_mach < 0:
+            descent_ratio = (self.safe_altitude - altitude_km) / self.safe_altitude
+            Pv = -self.max_penalty * min(1.0, -vertical_speed_mach / self.Kv * descent_ratio)
 
-        Returns:
-            (float): reward
-        """
-        ego_z = env.agents[agent_id].get_position()[-1] / 1000    # unit: km
-        ego_vz = env.agents[agent_id].get_velocity()[-1] / 340    # unit: mh
-        Pv = 0.
-        if ego_z <= self.safe_altitude:
-            Pv = -np.clip(ego_vz / self.Kv * (self.safe_altitude - ego_z) / self.safe_altitude, 0., 1.)
-        PH = 0.
-        if ego_z <= self.danger_altitude:
-            PH = np.clip(ego_z / self.danger_altitude, 0., 1.) - 1. - 1.
+        PH = 0.0
+        if altitude_km <= self.danger_altitude:
+            PH = -self.max_penalty * (1.0 - altitude_km / self.danger_altitude)
 
-        new_reward = Pv + PH
-        return self._process(new_reward, agent_id, (Pv, PH))
+        if altitude_km <= self.altitude_limit:
+            PH = -30.0  # severe penalty on crash
+
+        reward = Pv + PH
+        return self._process(reward, agent_id, (Pv, PH))
