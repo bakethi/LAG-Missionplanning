@@ -14,6 +14,17 @@ class ReachBaseEnv(BaseEnv):
         self.init_states = None
         self.active_waypoint = None
         self.active_base = None
+        self._visited_waypoint = 0  # 0 = go to waypoint, 1 = go to base
+    
+    @property
+    def visited_waypoint(self):
+        return self._visited_waypoint
+
+    @visited_waypoint.setter
+    def visited_waypoint(self, visited):
+        if visited not in [0, 1]:
+            raise ValueError("visited_waypoint must be 0 or 1.")
+        self._visited_waypoint = visited
 
     def load_task(self):
         taskname = getattr(self.config, 'task', None)
@@ -27,6 +38,7 @@ class ReachBaseEnv(BaseEnv):
         self.reset_simulators()
         self.heading_turn_counts = 0
         self.task.reset(self)
+        self.visited_waypoint = 0
         obs = self.get_obs()
         return self._pack(obs)
 
