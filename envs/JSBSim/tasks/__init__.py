@@ -4,3 +4,4 @@ from .singlecombat_with_missle_task import SingleCombatDodgeMissileTask, Hierarc
 from .OpStory01_task import AirbaseAttackTask
 from .reach_waypoint_task import ReachWaypointTask
 from .reach_base_task import ReachBaseTask
+from .multi_waypoint_task import MultiWaypointTask
