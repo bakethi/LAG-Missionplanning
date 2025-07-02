@@ -43,20 +43,20 @@ static_base_configs: {
       enemy_base/altitude-ft: 2500,
     },
   },
-  1000000012: {
-    color: Green,
-    type: Ground+Static+Building,
-    model: Gas Platform,
-    init_state: {
-      enemy_base/longitude-geod-deg: 120.80,
-      enemy_base/latitude-geod-deg: 60.38,
-      enemy_base/altitude-ft: 2500,
-    },
-  }
+  # 1000000012: {
+  #   color: Green,
+  #   type: Ground+Static+Building,
+  #   model: Gas Platform,
+  #   init_state: {
+  #     enemy_base/longitude-geod-deg: 120.80,
+  #     enemy_base/latitude-geod-deg: 60.38,
+  #     enemy_base/altitude-ft: 2500,
+  #   },
+  # }
 }
 
 # success radius
-success_radius: 250  # m
+success_radius: 750  # m
 
 # waypoint config
 waypoint_configs: {
@@ -71,50 +71,50 @@ waypoint_configs: {
       waypoint/active: 0,
     },
   },
-  100000002: {
-    color: Red,
-    type: Navaid+Static+Waypoint,
-    model: Waypoint,
-    init_state: {
-      waypoint/longitude-geod-deg: 119.5,
-      waypoint/latitude-geod-deg: 59.8,
-      waypoint/altitude-ft: 2500,
-      waypoint/active: 0,
-    },
-  },
-  100000003: {
-    color: Blue,
-    type: Navaid+Static+Waypoint,
-    model: Waypoint,
-    init_state: {
-      waypoint/longitude-geod-deg: 120.5,
-      waypoint/latitude-geod-deg: 60.2,
-      waypoint/altitude-ft: 3200,
-      waypoint/active: 0,
-    },
-  },
-  100000004: {
-    color: Green,
-    type: Navaid+Static+Waypoint,
-    model: Waypoint,
-    init_state: {
-      waypoint/longitude-geod-deg: 120.7,
-      waypoint/latitude-geod-deg: 59.9,
-      waypoint/altitude-ft: 1800,
-      waypoint/active: 0,
-    },
-  },
-  100000005: {
-    color: Red,
-    type: Navaid+Static+Waypoint,
-    model: Waypoint,
-    init_state: {
-      waypoint/longitude-geod-deg: 119.9,
-      waypoint/latitude-geod-deg: 60.3,
-      waypoint/altitude-ft: 2700,
-      waypoint/active: 0,
-    },
-  },
+  # 100000002: {
+  #   color: Red,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 119.5,
+  #     waypoint/latitude-geod-deg: 59.8,
+  #     waypoint/altitude-ft: 2500,
+  #     waypoint/active: 0,
+  #   },
+  # },
+  # 100000003: {
+  #   color: Blue,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 120.5,
+  #     waypoint/latitude-geod-deg: 60.2,
+  #     waypoint/altitude-ft: 3200,
+  #     waypoint/active: 0,
+  #   },
+  # },
+  # 100000004: {
+  #   color: Green,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 120.7,
+  #     waypoint/latitude-geod-deg: 59.9,
+  #     waypoint/altitude-ft: 1800,
+  #     waypoint/active: 0,
+  #   },
+  # },
+  # 100000005: {
+  #   color: Red,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 119.9,
+  #     waypoint/latitude-geod-deg: 60.3,
+  #     waypoint/altitude-ft: 2700,
+  #     waypoint/active: 0,
+  #   },
+  # },
 }
 
 
