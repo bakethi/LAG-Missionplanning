@@ -1,3 +1,5 @@
+import logging
+logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -27,8 +29,8 @@ class FlightHeatmap:
                 self.agent_lons.append(lon)
                 self.agent_lats.append(lat)
 
-        # Extract UNIQUE waypoints (10000000X)
-        waypoint_pattern = r'(10000000\d),T=([\d\.\-e\|]+)'
+        # Extract UNIQUE waypoints (100000XXX)
+        waypoint_pattern = r'(100000\d\d\d),T=([\d\.\-e\|]+)'
         waypoint_matches = re.findall(waypoint_pattern, acmi_data)
 
         waypoints = {}
@@ -54,13 +56,17 @@ class FlightHeatmap:
 
         # Waypoints (unique)
         plt.scatter(self.wp_lons, self.wp_lats, c='blue', label='Waypoints', edgecolors='k', s=80, marker='o', zorder=5)
-        for i, (lon, lat) in enumerate(zip(self.wp_lons, self.wp_lats), start=1):
-            plt.text(lon, lat, f'WP{i}', fontsize=9, ha='right', color='blue')
+        for i, (lon, lat) in enumerate(zip(self.wp_lons, self.wp_lats)):
+            plt.annotate(f'WP{i+1}', xy=(lon, lat), xytext=(-5, 5),
+                         textcoords='offset points', fontsize=9, ha='right',
+                         va='center', color='blue')
+
 
         # Starting position
         if self.agent_lons and self.agent_lats:
             plt.scatter(self.agent_lons[0], self.agent_lats[0], c='green', label='Start Position', edgecolors='k', s=100, marker='*', zorder=6)
-            plt.text(self.agent_lons[0], self.agent_lats[0], 'Start', fontsize=10, ha='left', color='green')
+            plt.annotate('Start', xy=(self.agent_lons[0], self.agent_lats[0]), xytext=(5, 5),
+                         textcoords='offset points', fontsize=10, ha='left', va='center', color='green')
 
         # Decorations
         plt.title("F-16 Flight Path Heatmap with Unique Waypoints")
