@@ -35,7 +35,7 @@ class WaypointEnv(BaseEnv):
         if self.init_states is None:
             self.init_states = [sim.init_state.copy() for sim in self.agents.values()]
 
-        init_heading = self.np_random.uniform(0., 180.)
+        init_heading = self.np_random.uniform(0., 360.)
         init_altitude = self.np_random.uniform(14000., 30000.)
         init_velocities_u = self.np_random.uniform(400., 1200.)
 
