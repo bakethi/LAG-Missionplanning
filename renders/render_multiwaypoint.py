@@ -1,12 +1,15 @@
 import numpy as np
 import torch
-import sys
-import os
+import random
+import sys, os
+from datetime import datetime
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from envs.JSBSim.envs import MultiWaypointEnv
 from algorithms.ppo.ppo_actor import PPOActor
-import logging, random
-logging.basicConfig(level=logging.DEBUG)
+import logging
+logging.basicConfig(level=logging.INFO)
 
 class Args:
     def __init__(self) -> None:
@@ -29,33 +32,51 @@ render = True
 policy_index = "latest"
 run_dir = "../scripts/results/MultiWaypoint/1/multiwaypoint/ppo/v1/latest"
 experiment_name = run_dir.split('/')[-4]
+
+# === ENV SETUP ===
 env = MultiWaypointEnv("1/multiwaypoint")
 env.seed(random.randint(0, 5))
 
-# === POLICY ===
+# === ACMI OUTPUT PATH SETUP ===
+env_name = env.__class__.__name__  # or use env.env_name if available
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+acmi_dir = os.path.join(".", env_name, timestamp)
+os.makedirs(acmi_dir, exist_ok=True)
+acmi_filepath = os.path.join(acmi_dir, f"{experiment_name}.txt.acmi")
+
+# === POLICY LOAD ===
 args = Args()
 policy = PPOActor(args, env.observation_space, env.action_space, device=torch.device("cpu"))
 policy.eval()
-policy.load_state_dict(torch.load(f"{run_dir}/actor_{policy_index}.pt"))
+policy.load_state_dict(torch.load(f"{run_dir}/actor_{policy_index}.pt", map_location='cpu'))
 
-# === INITIALIZE ENV ===
+# === EPISODE INIT ===
 obs = env.reset()
 if render:
-    env.render(mode='txt', filepath=f"{experiment_name}.txt.acmi")
+    env.render(mode='txt', filepath=acmi_filepath)
 
 rnn_states = np.zeros((1, 1, args.recurrent_hidden_size), dtype=np.float32)
 masks = np.ones((1, 1), dtype=np.float32)
 episode_reward = 0
 
-# === MAIN LOOP ===
+# === MAIN INFERENCE LOOP ===
 while True:
-    action, _, rnn_states = policy(obs, rnn_states, masks, deterministic=True)
+    obs_tensor = torch.tensor(obs, dtype=torch.float32)
+    masks_tensor = torch.tensor(masks, dtype=torch.float32)
+    rnn_tensor = torch.tensor(rnn_states, dtype=torch.float32)
+
+    with torch.no_grad():
+        action, _, rnn_tensor = policy(obs_tensor, rnn_tensor, masks_tensor, deterministic=True)
+
     action = _t2n(action)
-    rnn_states = _t2n(rnn_states)
+    rnn_states = _t2n(rnn_tensor)
+
     obs, reward, done, info = env.step(action)
     episode_reward += reward
+
     if render:
-        env.render(mode='txt', filepath=f"{experiment_name}.txt.acmi")
+        env.render(mode='txt', filepath=acmi_filepath)
+
     if done.all():
         print(info)
         break
