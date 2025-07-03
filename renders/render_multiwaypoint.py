@@ -9,6 +9,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from envs.JSBSim.envs import MultiWaypointEnv
 from algorithms.ppo.ppo_actor import PPOActor
 import logging
+
+# Import the heatmap class
+from heatmap import FlightHeatmap
+
 logging.basicConfig(level=logging.INFO)
 
 class Args:
@@ -82,3 +86,9 @@ while True:
         break
 
 print("Total Episode Reward:", episode_reward)
+
+# === CREATE HEATMAP NEXT TO ACMI FILE ===
+heatmap_path = os.path.splitext(acmi_filepath)[0] + "_heatmap.png"
+heatmap = FlightHeatmap(acmi_filepath)
+heatmap.plot(save_path=heatmap_path, show=False)
+print(f"Heatmap saved to {heatmap_path}")
