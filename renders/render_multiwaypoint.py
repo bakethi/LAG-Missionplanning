@@ -3,6 +3,7 @@ import torch
 import random
 import sys, os
 from datetime import datetime
+from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -64,31 +65,37 @@ masks = np.ones((1, 1), dtype=np.float32)
 episode_reward = 0
 
 # === MAIN INFERENCE LOOP ===
-while True:
-    obs_tensor = torch.tensor(obs, dtype=torch.float32)
-    masks_tensor = torch.tensor(masks, dtype=torch.float32)
-    rnn_tensor = torch.tensor(rnn_states, dtype=torch.float32)
+with tqdm(total=env.max_steps, desc="Running Simulation", unit="step", ncols=100) as pbar:
+    while True:
+        obs_tensor = torch.tensor(obs, dtype=torch.float32)
+        masks_tensor = torch.tensor(masks, dtype=torch.float32)
+        rnn_tensor = torch.tensor(rnn_states, dtype=torch.float32)
 
-    with torch.no_grad():
-        action, _, rnn_tensor = policy(obs_tensor, rnn_tensor, masks_tensor, deterministic=True)
+        with torch.no_grad():
+            action, _, rnn_tensor = policy(obs_tensor, rnn_tensor, masks_tensor, deterministic=True)
 
-    action = _t2n(action)
-    rnn_states = _t2n(rnn_tensor)
+        action = _t2n(action)
+        rnn_states = _t2n(rnn_tensor)
 
-    obs, reward, done, info = env.step(action)
-    episode_reward += reward
+        obs, reward, done, info = env.step(action)
+        episode_reward += reward
+        pbar.update(1)
 
-    if render:
-        env.render(mode='txt', filepath=acmi_filepath)
+        if render:
+            env.render(mode='txt', filepath=acmi_filepath)
 
-    if done.all():
-        print(info)
-        break
+        if done.all():
+            pbar.n = pbar.total
+            pbar.refresh()
+            print(info)
+            break
 
 print("Total Episode Reward:", episode_reward)
 
 # === CREATE HEATMAP NEXT TO ACMI FILE ===
 heatmap_path = os.path.splitext(acmi_filepath)[0] + "_heatmap.png"
+plot_path = os.path.splitext(acmi_filepath)[0] + "_flight_path.html"
 heatmap = FlightHeatmap(acmi_filepath)
-heatmap.plot(save_path=heatmap_path, show=False)
+heatmap.plot_3d(save_path=heatmap_path, show=False)
+#heatmap.plotly_3d(save_path=plot_path, show=False)
 print(f"Heatmap saved to {heatmap_path}")
