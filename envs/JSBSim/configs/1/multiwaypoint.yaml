@@ -4,9 +4,10 @@ task: multiwaypoint
 # simulation config
 sim_freq: 60
 agent_interaction_steps: 12 # step 0.2s
+randomise_waypoint_sequence: True
 
 # termination config
-max_steps: 2500             # episode length: 500s
+max_steps: 2500             # episode length: maxsteps *  0.2s = 500s
 altitude_limit: 2500
 acceleration_limit_x: 10.0
 acceleration_limit_y: 10.0
@@ -32,33 +33,38 @@ aircraft_configs: {
 }
 
 # success radius
-success_radius: 500  # m
+success_radius: 750  # m - realistic for high-speed F-16 navigation
 
 # waypoint config
-waypoint_configs: {
-  100000001: {
-    color: Green,
-    type: Navaid+Static+Waypoint,
-    model: Waypoint,
-    init_state: {
-      waypoint/longitude-geod-deg: 119.7,
-      waypoint/latitude-geod-deg: 60.1,
-      waypoint/altitude-ft: 4000,
-      waypoint/active: 0,
-    },
-  },
-  100000002: {
-    color: Red,
-    type: Navaid+Static+Waypoint,
-    model: Waypoint,
-    init_state: {
-      waypoint/longitude-geod-deg: 119.5,
-      waypoint/latitude-geod-deg: 59.8,
-      waypoint/altitude-ft: 4000,
-      waypoint/active: 0,
-    },
-  },
-}
+waypoint_configs:
+  100000001:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.54
+      waypoint/latitude-geod-deg: 60.0
+      waypoint/altitude-ft: 15000
+      waypoint/active: 0
+  100000002:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.38
+      waypoint/latitude-geod-deg: 60.00
+      waypoint/altitude-ft: 15000
+      waypoint/active: 0
+  100000003:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.0
+      waypoint/latitude-geod-deg: 59.8
+      waypoint/altitude-ft: 15000
+      waypoint/active: 0
+
 
 
 # (longitude, latitude, altitude)
@@ -71,7 +77,7 @@ corners_coordinates: [
   [120.8985, 60.4495, 0.0],
   [119.1015, 60.4495, 0.0]
 ]
-## --> this is about a 50km x 50km area
+## --> this is about a 100km x 100km area
 
 # reward config
 AltitudeReward_safe_altitude: 4.0
