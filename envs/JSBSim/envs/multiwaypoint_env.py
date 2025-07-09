@@ -2,6 +2,8 @@ import math
 from envs.JSBSim.human_task.HumanFreeFlyTask import HumanFreeFlyTask
 from .env_base import BaseEnv
 from ..tasks.multi_waypoint_task import MultiWaypointTask
+import numpy as np
+from typing import Tuple
 from ..core.catalog import Catalog as c
 
 class MultiWaypointEnv(BaseEnv):
@@ -11,10 +13,26 @@ class MultiWaypointEnv(BaseEnv):
     def __init__(self, config_name: str):
         super().__init__(config_name)
         assert len(self.agents) == 1, f"{self.__class__.__name__} only supports 1 aircraft"
+        self.eval_flag = getattr(self.config, 'eval_flag', False)
         self.init_states = None
         self.active_waypoint = None
         self._task_stage = 0
-        self.waypoint_sequence = {0: 100000001, 1: 100000002}  # fixed UID mapping
+        self.waypoint_sequence = self._populate_waypoint_sequence()
+
+    # populate waypoints sequence dict from config
+    def _populate_waypoint_sequence(self):
+        waypoint_sequence = {}
+        waypoint_uids = list(self.waypoints.keys())
+        
+        # Option 1: Completely random order
+        if getattr(self.config, 'randomise_waypoint_sequence', False):
+            np.random.shuffle(waypoint_uids)
+
+        
+        for idx, wp_uid in enumerate(waypoint_uids):
+            waypoint_sequence[idx] = wp_uid
+        
+        return waypoint_sequence
 
     @property
     def task_stage(self):
@@ -22,8 +40,8 @@ class MultiWaypointEnv(BaseEnv):
 
     @task_stage.setter
     def task_stage(self, stage):
-        if stage not in self.waypoint_sequence:
-            raise ValueError(f"task_stage must be one of {list(self.waypoint_sequence.keys())}")
+        if not 0 <= stage < len(self.waypoint_sequence):
+            raise ValueError(f"task_stage must be in {range(len(self.waypoint_sequence))}")
         self._task_stage = stage
         self.set_active_waypoint(self.waypoint_sequence[stage])
 
@@ -43,11 +61,72 @@ class MultiWaypointEnv(BaseEnv):
         obs = self.get_obs()
         return self._pack(obs)
 
+    
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+        """Run one timestep of the environment's dynamics. When end of
+        episode is reached, you are responsible for calling `reset()`
+        to reset this environment's observation. Accepts an action and
+        returns a tuple (observation, reward_visualize, done, info).
+
+        Args:
+            action (np.ndarray): the agents' actions, allow opponent's action input
+
+        Returns:
+            (tuple):
+                obs: agents' observation of the current environment
+                rewards: amount of rewards returned after previous actions
+                dones: whether the episode has ended, in which case further step() calls are undefined
+                info: auxiliary information
+        """
+        self.current_step += 1
+        info = {"current_step": self.current_step}
+        # apply actions
+        action = self._unpack(action)
+        for agent_id in self.agents.keys():
+            a_action = self.task.normalize_action(self, agent_id, action[agent_id])
+            # 在 normalize_action 之后打印 a_action 的值
+            #logging.debug(f"a_action: {a_action}")
+            self.agents[agent_id].set_property_values(self.task.action_var, a_action)
+        # run simulation
+        for _ in range(self.agent_interaction_steps):
+            for sim in self._jsbsims.values():
+                sim.run()
+            for sim in self._tempsims.values():
+                sim.run()
+        self.task.step(self)
+
+        # --- Continuous refuel logic ---
+        step_size = self.agent_interaction_steps / self.sim_freq  #  0.2s
+        refuel_rate = 10.0  # lbs per second
+        max_fuel = 1500    # Maximum allowed fuel
+
+        for agent_id, agent in self.agents.items():
+            current_fuel = agent.get_property_value(c.propulsion_tank_contents_lbs)
+            refill = refuel_rate * step_size
+            new_fuel = min(current_fuel + refill, max_fuel)
+            agent.set_property_value(c.propulsion_tank_contents_lbs, new_fuel)
+            #print(f"[{self.current_step}] Agent[{agent_id}] Fuel: {current_fuel:.1f} → {new_fuel:.1f}")
+
+
+        obs = self.get_obs()
+
+        dones = {}
+        for agent_id in self.agents.keys():
+            done, sucess, info = self.task.get_termination(self, agent_id, info)
+            dones[agent_id] = [done]
+
+        rewards = {}
+        for agent_id in self.agents.keys():
+            reward, info = self.task.get_reward(self, agent_id, info)
+            rewards[agent_id] = [reward]
+
+        return self._pack(obs), self._pack(rewards), self._pack(dones), info
+
     def reset_simulators(self):
         if self.init_states is None:
             self.init_states = [sim.init_state.copy() for sim in self.agents.values()]
 
-        init_heading = self.np_random.uniform(0., 180.)
+        init_heading = self.np_random.uniform(0., 360.)
         init_altitude = self.np_random.uniform(14000., 30000.)
         init_velocities_u = self.np_random.uniform(400., 1200.)
 
@@ -104,6 +183,11 @@ class MultiWaypointEnv(BaseEnv):
         return 6371000 * c  # meters
 
     def get_alignment_to_waypoint(self, agent_id):
+        """
+        Calculate the yaw difference between the agent's heading and the direction to the active waypoint.
+        returns the yaw difference in radians, where 0 means perfectly aligned.
+        Between -pi and pi, positive means the agent needs to turn right to face the waypoint.
+        """
         if not self.active_waypoint or self.active_waypoint not in self.waypoints:
             return 0.0
 
