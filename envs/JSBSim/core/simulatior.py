@@ -669,7 +669,7 @@ class WaypointSimulator(BaseSimulator):
                 self.rendered = False  # Allow re-rendering in the future
                 lon, lat, alt = self._geodetic
                 return f"{self.uid},T={lon}|{lat}|{alt}|0|0|0,Color={self.color},Type=Navaid+Static+Waypoint,Visible=0"
-        return ""
+        return None
 
 
         
