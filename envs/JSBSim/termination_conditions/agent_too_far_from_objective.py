@@ -8,7 +8,7 @@ class AgentTooFar(BaseTerminationCondition):
 
     def __init__(self, config):
         super().__init__(config)
-        self.max_distance = getattr(config, 'max_waypoint_distance', 70000.0)  # meters
+        self.max_distance = getattr(config, 'max_waypoint_distance', 141000.0)  # meters
 
     def get_termination(self, task, env, agent_id, info={}):
         done = False
