@@ -1,0 +1,961 @@
+# task config
+task: multiwaypoint
+eval_flag: true
+
+# simulation config
+sim_freq: 60
+agent_interaction_steps: 12 # step 0.2s
+
+# termination config
+max_steps: 2500             # episode length: 500s
+altitude_limit: 2500
+acceleration_limit_x: 10.0
+acceleration_limit_y: 10.0
+acceleration_limit_z: 10.0
+
+# aircraft config
+aircraft_configs: {
+  A0100: {
+    color: Red,
+    model: f16,
+    max_heading_increment: 180,       # degree
+    max_altitude_increment: 7000,     # feet
+    max_velocities_u_increment: 100,  # meter
+    check_interval: 30,               # second
+    init_state: {
+      ic_long_gc_deg: 120.0,
+      ic_lat_geod_deg: 60.0,
+      ic_h_sl_ft: 20000,
+      ic_psi_true_deg: 0.0,
+      ic_u_fps: 800.0,
+    }
+  }
+}
+
+# success radius
+success_radius: 750  # m
+
+
+
+# (longitude, latitude, altitude)
+battle_field_center: [120.0, 60.0, 0.0]
+
+# battle field corners
+corners_coordinates: [
+  [119.1015, 59.5505, 0.0],
+  [120.8985, 59.5505, 0.0],
+  [120.8985, 60.4495, 0.0],
+  [119.1015, 60.4495, 0.0]
+]
+## --> this is about a 100km x 100km area
+
+# reward config
+AltitudeReward_safe_altitude: 4.0
+AltitudeReward_danger_altitude: 3.5
+AltitudeReward_Kv: 0.2
+
+# waypoint config
+waypoint_configs: {
+}
+
+waypoint_configs:
+  100000001:
+    color: Green
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.7
+      waypoint/latitude-geod-deg: 60.1
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000002:
+    color: Red
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.5
+      waypoint/latitude-geod-deg: 59.8
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000003:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.25055
+      waypoint/latitude-geod-deg: 59.572985
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000004:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.595728
+      waypoint/latitude-geod-deg: 59.751166
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000005:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.424939
+      waypoint/latitude-geod-deg: 60.158853
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000006:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.704747
+      waypoint/latitude-geod-deg: 59.628658
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000007:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.859694
+      waypoint/latitude-geod-deg: 59.577288
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000008:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.494392
+      waypoint/latitude-geod-deg: 60.004814
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000009:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.149185
+      waypoint/latitude-geod-deg: 59.729255
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000010:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.269342
+      waypoint/latitude-geod-deg: 60.040402
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000011:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.497632
+      waypoint/latitude-geod-deg: 60.08025
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000012:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.556047
+      waypoint/latitude-geod-deg: 59.556342
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000013:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.549557
+      waypoint/latitude-geod-deg: 60.178127
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000014:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.71293
+      waypoint/latitude-geod-deg: 59.690276
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000015:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.821612
+      waypoint/latitude-geod-deg: 59.853098
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000016:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.268164
+      waypoint/latitude-geod-deg: 59.637448
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000017:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.624447
+      waypoint/latitude-geod-deg: 60.09325
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000018:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.55191
+      waypoint/latitude-geod-deg: 60.206529
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000019:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.065102
+      waypoint/latitude-geod-deg: 60.425331
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000020:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.781726
+      waypoint/latitude-geod-deg: 60.046785
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000021:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.59194
+      waypoint/latitude-geod-deg: 60.106549
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000022:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.649987
+      waypoint/latitude-geod-deg: 60.06954
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000023:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.367616
+      waypoint/latitude-geod-deg: 59.591696
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000024:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.511033
+      waypoint/latitude-geod-deg: 59.81066
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000025:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.244886
+      waypoint/latitude-geod-deg: 59.759779
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000026:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.283
+      waypoint/latitude-geod-deg: 59.800398
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000027:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.243825
+      waypoint/latitude-geod-deg: 59.878484
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000028:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.766715
+      waypoint/latitude-geod-deg: 59.738847
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000029:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.581259
+      waypoint/latitude-geod-deg: 60.392552
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000030:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.26602
+      waypoint/latitude-geod-deg: 60.098109
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000031:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.409036
+      waypoint/latitude-geod-deg: 60.205985
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000032:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.395134
+      waypoint/latitude-geod-deg: 59.89163
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000033:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.879673
+      waypoint/latitude-geod-deg: 60.12586
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000034:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.102339
+      waypoint/latitude-geod-deg: 60.165968
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000035:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.616105
+      waypoint/latitude-geod-deg: 60.248124
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000036:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.513099
+      waypoint/latitude-geod-deg: 59.579358
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000037:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.668369
+      waypoint/latitude-geod-deg: 59.791199
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000038:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.480636
+      waypoint/latitude-geod-deg: 60.398176
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000039:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.676333
+      waypoint/latitude-geod-deg: 59.833395
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000040:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.279323
+      waypoint/latitude-geod-deg: 59.906173
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000041:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.744942
+      waypoint/latitude-geod-deg: 59.963008
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000042:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.57749
+      waypoint/latitude-geod-deg: 59.772218
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000043:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.110279
+      waypoint/latitude-geod-deg: 59.786705
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000044:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.152001
+      waypoint/latitude-geod-deg: 60.357643
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000045:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.819223
+      waypoint/latitude-geod-deg: 59.747669
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000046:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.894075
+      waypoint/latitude-geod-deg: 60.008564
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000047:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.264864
+      waypoint/latitude-geod-deg: 59.592858
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000048:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.298539
+      waypoint/latitude-geod-deg: 60.114574
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000049:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.524867
+      waypoint/latitude-geod-deg: 59.930022
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000050:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.215659
+      waypoint/latitude-geod-deg: 59.893576
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000051:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.89153
+      waypoint/latitude-geod-deg: 60.026174
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000052:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.846528
+      waypoint/latitude-geod-deg: 60.324341
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000053:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.122131
+      waypoint/latitude-geod-deg: 60.198429
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000054:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.326534
+      waypoint/latitude-geod-deg: 60.033236
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000055:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.580985
+      waypoint/latitude-geod-deg: 60.126725
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000056:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.301959
+      waypoint/latitude-geod-deg: 59.941354
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000057:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.916842
+      waypoint/latitude-geod-deg: 60.407981
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000058:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.675408
+      waypoint/latitude-geod-deg: 59.787287
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000059:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.001053
+      waypoint/latitude-geod-deg: 59.711108
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000060:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.741492
+      waypoint/latitude-geod-deg: 60.333096
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000061:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.637805
+      waypoint/latitude-geod-deg: 60.124916
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000062:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.195819
+      waypoint/latitude-geod-deg: 59.687903
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000063:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.471732
+      waypoint/latitude-geod-deg: 60.035402
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000064:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.500692
+      waypoint/latitude-geod-deg: 60.027288
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000065:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.102528
+      waypoint/latitude-geod-deg: 59.841916
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000066:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.1365
+      waypoint/latitude-geod-deg: 60.38576
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000067:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.680563
+      waypoint/latitude-geod-deg: 60.298167
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000068:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.654103
+      waypoint/latitude-geod-deg: 59.602575
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000069:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.679283
+      waypoint/latitude-geod-deg: 60.401808
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000070:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.255419
+      waypoint/latitude-geod-deg: 59.987405
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000071:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.225875
+      waypoint/latitude-geod-deg: 60.234281
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000072:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.477704
+      waypoint/latitude-geod-deg: 59.665924
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000073:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.955582
+      waypoint/latitude-geod-deg: 60.044773
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000074:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.577807
+      waypoint/latitude-geod-deg: 60.334817
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000075:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.861879
+      waypoint/latitude-geod-deg: 59.740907
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000076:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.070615
+      waypoint/latitude-geod-deg: 60.206708
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000077:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.462968
+      waypoint/latitude-geod-deg: 59.830733
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000078:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.889783
+      waypoint/latitude-geod-deg: 60.13474
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000079:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.888766
+      waypoint/latitude-geod-deg: 60.015801
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000080:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.318945
+      waypoint/latitude-geod-deg: 59.752503
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000081:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.70904
+      waypoint/latitude-geod-deg: 60.07939
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000082:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.515016
+      waypoint/latitude-geod-deg: 59.748475
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000083:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.229075
+      waypoint/latitude-geod-deg: 60.117862
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000084:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.512908
+      waypoint/latitude-geod-deg: 60.364473
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000085:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.646265
+      waypoint/latitude-geod-deg: 59.614201
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000086:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.529194
+      waypoint/latitude-geod-deg: 60.151911
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000087:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.486484
+      waypoint/latitude-geod-deg: 59.669448
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000088:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.782619
+      waypoint/latitude-geod-deg: 60.063868
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000089:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.95089
+      waypoint/latitude-geod-deg: 60.255873
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000090:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.552572
+      waypoint/latitude-geod-deg: 59.721679
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000091:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.275685
+      waypoint/latitude-geod-deg: 59.938015
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000092:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.862671
+      waypoint/latitude-geod-deg: 59.970355
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000093:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.411649
+      waypoint/latitude-geod-deg: 60.155855
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000094:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.870045
+      waypoint/latitude-geod-deg: 59.638978
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000095:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.82501
+      waypoint/latitude-geod-deg: 59.855533
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000096:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 120.649926
+      waypoint/latitude-geod-deg: 59.774042
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000097:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.443305
+      waypoint/latitude-geod-deg: 59.953804
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000098:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.859621
+      waypoint/latitude-geod-deg: 59.800912
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000099:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.550402
+      waypoint/latitude-geod-deg: 60.380516
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
+  100000100:
+    color: Blue
+    type: Navaid+Static+Waypoint
+    model: Waypoint
+    init_state:
+      waypoint/longitude-geod-deg: 119.897806
+      waypoint/latitude-geod-deg: 60.324853
+      waypoint/altitude-ft: 4000
+      waypoint/active: 0
