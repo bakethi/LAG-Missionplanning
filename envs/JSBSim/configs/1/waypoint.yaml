@@ -46,7 +46,7 @@ static_base_configs: {
 }
 
 # success radius
-success_radius: 250  # m
+success_radius: 750  # m
 
 # waypoint config
 waypoint_configs: {
