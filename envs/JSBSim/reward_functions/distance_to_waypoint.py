@@ -1,47 +1,43 @@
 import numpy as np
 from .reward_function_base import BaseRewardFunction
-import logging
 from ..core.catalog import Catalog as c
 
 class DistanceToWaypointReward(BaseRewardFunction):
     """
-    Reward based on distance and heading alignment to the current active waypoint.
-    Encourages the agent to get closer and face the target.
+    DistanceToWaypointReward:
+    Encourages the agent to approach and align early with the active waypoint.
+    - Penalizes straying far from the waypoint.
+    - Rewards smaller yaw difference (alignment) more heavily near perfect alignment.
     """
+
     def __init__(self, config):
         super().__init__(config)
-        self.success_radius = getattr(config, "success_radius", 500.0)  # meters
-        self.max_distance = 70710.0  # battlefield diagonal (for normalization)
-        self.punish_factor = 1.0     # scaling for distance penalty
+        self.success_radius = getattr(config, "success_radius", 750.0)
+        self.max_distance = 141000.0
+        self.punish_factor = getattr(config, "punish_factor", 1.0)
+        self.yaw_sigma = getattr(config, "yaw_alignment_sigma", 0.25)  # width of Gaussian
 
     def get_reward(self, task, env, agent_id):
         distance = env.compute_distance_to_waypoint(agent_id)
-        alignment_score = self.get_alignment_score_to_waypoint(env, agent_id)
+        yaw_diff = abs(env.get_alignment_to_waypoint(agent_id))  # radians
 
-        # Reward shaping
+        # --- Proximity Reward ---
         if distance <= self.success_radius:
-            distance_reward = 0.0
-            logging.debug(f'agent[{agent_id}] reached waypoint within {distance:.1f}m')
-        elif distance > 100000.0:
-            distance_reward = -2.0  # extreme penalty
+            proximity_reward = 10.0
+        elif distance > self.max_distance:
+            proximity_reward = -1.0
         else:
-            # Closer = less negative
-            distance_reward = -self.punish_factor * ((distance - self.success_radius) / self.max_distance)
+            # Smooth squared shaping
+            proximity_reward = -self.punish_factor * ((distance - self.success_radius) / self.max_distance) ** 2
 
-        reward = distance_reward + alignment_score
+        # --- Gaussian Alignment Reward ---
+        alignment_score = np.exp(- (yaw_diff / self.yaw_sigma) ** 2)
 
-        return self._process(reward, agent_id, (reward, distance, alignment_score))
+        # Optional: scale alignment reward to emphasize it more when closer
+        alignment_weight = 0.5 + 0.5 * (1 - min(distance / self.max_distance, 1.0))
+        alignment_reward = alignment_score * alignment_weight
 
-    def get_alignment_score_to_waypoint(self, env, agent_id):
-        yaw_diff = env.get_alignment_to_waypoint(agent_id)
-        # Score ranges from 0 (aligned) to -1 (opposite)
-        alignment_score = - (1 - np.cos(yaw_diff)) / 2
-        return alignment_score
+        # --- Total Reward ---
+        total_reward = proximity_reward + alignment_reward
 
-
-
-
-
-## comparing of reward shaping, hard and easy
-# challenges, how i did it
-# systematically, methodology
+        return self._process(total_reward, agent_id, (total_reward, distance, yaw_diff, alignment_score))
