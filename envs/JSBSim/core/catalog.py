@@ -448,7 +448,7 @@ class ExtraCatalog(Property, Enum):
         """
         Check if the agent has reached the waypoint and update the state accordingly.
         """ 
-        success_radius = 500  # meters
+        success_radius = 750  # meters
         distance = ExtraCatalog.find_distance_to_base(sim)
         if distance < success_radius:
             sim.set_property_value(ExtraCatalog.detect_agent_reached_base_state, 1)
@@ -459,7 +459,7 @@ class ExtraCatalog(Property, Enum):
         Check if the agent is too far from the base and update the state accordingly.
         """
         distance = ExtraCatalog.find_distance_to_base(sim)
-        if distance > 50000:
+        if distance > 100000:
             sim.set_property_value(ExtraCatalog.detect_agent_too_far_base_state, 1)
 
 
@@ -467,7 +467,7 @@ class ExtraCatalog(Property, Enum):
         """
         Check if the agent has reached the waypoint and update the state accordingly.
         """ 
-        success_radius = 500  # meters
+        success_radius = 750  # meters
         distance = ExtraCatalog.find_distance_to_waypoint(sim)
         if distance < success_radius:
             sim.set_property_value(ExtraCatalog.detect_agent_reached_waypoint_state, 1)
@@ -477,7 +477,7 @@ class ExtraCatalog(Property, Enum):
         Check if the agent is too far from the waypoint and update the state accordingly.
         """
         distance = ExtraCatalog.find_distance_to_waypoint(sim)
-        if distance > 50000:
+        if distance > 141000:
             sim.set_property_value(ExtraCatalog.detect_agent_too_far_waypoint_state, 1)
 
 
