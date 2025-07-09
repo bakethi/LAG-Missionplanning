@@ -9,3 +9,4 @@ from .proximity_to_airbase_reward import ProximityToAirbaseReward
 from .distance_to_waypoint import DistanceToWaypointReward
 from .attitude_reward import AttitudeReward
 from .reachbase_reward import DistanceToBaseReward
+from .stability_reward import StabilityReward

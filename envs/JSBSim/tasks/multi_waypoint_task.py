@@ -2,7 +2,7 @@ import numpy as np
 from gymnasium import spaces
 from .task_base import BaseTask
 from ..core.catalog import Catalog as c
-from ..reward_functions import AltitudeReward, AttitudeReward
+from ..reward_functions import AltitudeReward, AttitudeReward, StabilityReward
 from ..reward_functions import DistanceToWaypointReward
 from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout
 from ..termination_conditions import AgentTooFar , UnreachWaypoint
@@ -18,7 +18,7 @@ class MultiWaypointTask(BaseTask):
         self.reward_functions = [
             AltitudeReward(self.config),
             DistanceToWaypointReward(self.config),
-            AttitudeReward(self.config),
+            StabilityReward(self.config),
         ]
         self.termination_conditions = [
             #UnreachHeading(self.config),
@@ -108,7 +108,7 @@ class MultiWaypointTask(BaseTask):
         # Waypoint metrics
         distance = env.compute_distance_to_waypoint(agent_id)
         alignment = env.get_alignment_to_waypoint(agent_id)
-        norm_obs[12] = distance / 70710     # battlefield diagonal normalization
+        norm_obs[12] = distance / 141000     # battlefield diagonal normalization
         norm_obs[13] = alignment            # radians
 
         return np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
