@@ -122,6 +122,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.lagplanning
 
 # Spyder project settings
 .spyderproject
@@ -143,3 +144,4 @@ dmypy.json
 
 # render folders
 renders/MultiWaypointEnv
+matlab/MultiWaypointEnv
