@@ -82,25 +82,28 @@ class FlightDataCollector:
         try:
             # Get airspeed
             airspeed = aircraft.get_property_value(c.velocities_vc_mps)
-            self.airspeed_data.append(airspeed)
             
             # Get altitude
             altitude = aircraft.get_property_value(c.position_h_sl_m)
-            self.altitude_data.append(altitude)
             
             # Get G-force (load factor)
             gforce = aircraft.get_property_value(c.accelerations_n_pilot_z_norm)
-            self.gforce_data.append(gforce)
             
             # Get mass
             mass = aircraft.get_property_value(c.inertia_weight_lbs) * 0.453592  # lbs to kg
-            self.mass_data.append(mass)
+            
         except:
             # Use default values if properties are not available
-            self.airspeed_data.append(np.sqrt(sum([v**2 for v in vel])))
-            self.altitude_data.append(pos[2])
-            self.gforce_data.append(1.0)
-            self.mass_data.append(10000.0)  # Default mass in kg
+            airspeed = np.sqrt(sum([v**2 for v in vel]))
+            altitude = pos[2]
+            gforce = 1.0
+            mass = 10000.0  # Default mass in kg
+        
+        # Append the collected data
+        self.airspeed_data.append(airspeed)
+        self.altitude_data.append(altitude)
+        self.gforce_data.append(gforce)
+        self.mass_data.append(mass)
         
         # Record current waypoint information
         waypoint_info = {
