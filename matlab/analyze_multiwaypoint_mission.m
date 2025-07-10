@@ -60,17 +60,25 @@ function analyze_multiwaypoint_mission(mat_file_path)
         end
     end
     
-    % Find unique waypoint transitions
+    % Find unique waypoint transitions (exclude starting position - task_stage 0)
     unique_stages = unique(waypoint_stages);
     waypoint_transitions = [];
     transition_times = [];
     
     for stage = unique_stages
-        first_occurrence = find(waypoint_stages == stage, 1, 'first');
-        if ~isempty(first_occurrence)
-            waypoint_transitions = [waypoint_transitions, stage];
-            transition_times = [transition_times, waypoint_times(first_occurrence)];
+        if stage > 0  % Only include actual waypoints, not starting position
+            first_occurrence = find(waypoint_stages == stage, 1, 'first');
+            if ~isempty(first_occurrence)
+                waypoint_transitions = [waypoint_transitions, stage];
+                transition_times = [transition_times, waypoint_times(first_occurrence)];
+            end
         end
+    end
+    
+    % Add the final waypoint if mission completed (end of mission time)
+    if length(waypoint_transitions) < 3  % Assuming 3 waypoints total
+        waypoint_transitions = [waypoint_transitions, 3];
+        transition_times = [transition_times, time_data(end)];
     end
     
     % Create comprehensive visualization
@@ -127,7 +135,7 @@ function create_multiwaypoint_plots(time_data, position_data, velocity_data, att
             plot3(north(closest_idx), east(closest_idx), up(closest_idx), ...
                   's', 'Color', colors(i,:), 'MarkerSize', 10, 'MarkerFaceColor', colors(i,:));
             text(north(closest_idx), east(closest_idx), up(closest_idx), ...
-                 sprintf('WP%d', waypoint_transitions(i)+1), 'FontSize', 8);
+                 sprintf('WP%d', i), 'FontSize', 8);  % Use i instead of waypoint_transitions(i)+1
         end
     end
     
@@ -153,7 +161,7 @@ function create_multiwaypoint_plots(time_data, position_data, velocity_data, att
             plot(east(closest_idx), north(closest_idx), ...
                  's', 'Color', colors(i,:), 'MarkerSize', 10, 'MarkerFaceColor', colors(i,:));
             text(east(closest_idx), north(closest_idx), ...
-                 sprintf('WP%d', waypoint_transitions(i)+1), 'FontSize', 8);
+                 sprintf('WP%d', i), 'FontSize', 8);  % Use i instead of waypoint_transitions(i)+1
         end
     end
     
@@ -172,8 +180,8 @@ function create_multiwaypoint_plots(time_data, position_data, velocity_data, att
     for i = 1:length(transition_times)
         line([transition_times(i), transition_times(i)], [min(altitude_data), max(altitude_data)], ...
              'Color', colors(i,:), 'LineStyle', '--', 'LineWidth', 1);
-        text(transition_times(i), max(altitude_data)*0.9, sprintf('WP%d', waypoint_transitions(i)+1), ...
-             'Rotation', 90, 'FontSize', 8, 'Color', colors(i,:));
+        text(transition_times(i), max(altitude_data)*0.9, sprintf('WP%d', i), ...
+             'Rotation', 90, 'FontSize', 8, 'Color', colors(i,:));  % Use i instead of waypoint_transitions(i)+1
     end
     
     xlabel('Time (s)');
@@ -342,7 +350,7 @@ function print_multiwaypoint_analysis(time_data, position_data, velocity_data, a
     fprintf('%s\n', repmat('-', 1, 40));
     
     for i = 1:length(waypoint_transitions)
-        fprintf('Waypoint %d: Reached at %.1f seconds\n', waypoint_transitions(i)+1, transition_times(i));
+        fprintf('Waypoint %d: Reached at %.1f seconds\n', i, transition_times(i));  % Use i instead of waypoint_transitions(i)+1
     end
     
     if length(waypoint_transitions) > 1
@@ -368,7 +376,7 @@ function print_multiwaypoint_analysis(time_data, position_data, velocity_data, a
                 avg_speed = segment_distance / segment_times(i);
                 
                 fprintf('Segment %d-%d: %.1fs, %.1fm, %.1f m/s avg\n', ...
-                        waypoint_transitions(i)+1, waypoint_transitions(i+1)+1, ...
+                        i, i+1, ...  % Use sequential waypoint numbers
                         segment_times(i), segment_distance, avg_speed);
             end
         end
