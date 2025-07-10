@@ -714,8 +714,17 @@ class MixedCatalog(dict):
         for jsbsim_prop in jsbsim_props:
             if jsbsim_prop.strip() == "":
                 continue  # skip empty line
-            [name_jsbsim, access] = jsbsim_prop.split(" ")
-            access = re.sub(r"[\(\)]", "", access)  # remove parenthesis from the flag
+            
+            # Handle cases where property doesn't have access info
+            parts = jsbsim_prop.split(" ")
+            if len(parts) < 2:
+                # If no access info, assume read-only
+                name_jsbsim = parts[0]
+                access = "R"
+            else:
+                name_jsbsim, access = parts[0], parts[1]
+                access = re.sub(r"[\(\)]", "", access)  # remove parenthesis from the flag
+            
             name = re.sub(r"_$", "", re.sub(r"[\-/\]\[]+", "_", name_jsbsim))  # get property name from jsbsim name
             if name not in self:
                 assert name not in ExtraCatalog.__members__, \
