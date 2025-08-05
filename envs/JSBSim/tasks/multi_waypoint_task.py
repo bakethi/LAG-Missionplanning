@@ -36,9 +36,9 @@ class MultiWaypointTask(BaseTask):
 
     def load_variables(self):
         self.state_var = [
-            c.delta_altitude,                   # 0. delta_h   (unit: m)
-            c.delta_heading,                    # 1. delta_heading  (unit: °)
-            c.delta_velocities_u,               # 2. delta_v   (unit: m/s)
+            c.delta_altitude,                   # 0. delta_h   (unit: m) <- not used
+            c.delta_heading,                    # 1. delta_heading  (unit: °) <- not used
+            c.delta_velocities_u,               # 2. delta_v   (unit: m/s) <- not used
             c.position_h_sl_m,                  # 3. altitude  (unit: m)
             c.attitude_roll_rad,                # 4. roll      (unit: rad)
             c.attitude_pitch_rad,               # 5. pitch     (unit: rad)
@@ -92,9 +92,9 @@ class MultiWaypointTask(BaseTask):
         obs = np.array(env.agents[agent_id].get_property_values(self.state_var))
         norm_obs = np.zeros(14)
 
-        norm_obs[0] = obs[0] / 1000         # delta altitude (km)
-        norm_obs[1] = obs[1] / 180 * np.pi  # delta heading (rad)
-        norm_obs[2] = obs[2] / 340          # delta velocities_u (mach)
+        norm_obs[0] = obs[0] / 1000         # delta altitude (km) <- not used
+        norm_obs[1] = obs[1] / 180 * np.pi  # delta heading (rad) <- not used
+        norm_obs[2] = obs[2] / 340          # delta velocities_u (mach) <- not used
         norm_obs[3] = obs[3] / 5000         # altitude (5km)
         norm_obs[4] = np.sin(obs[4])        # roll_sin
         norm_obs[5] = np.cos(obs[4])        # roll_cos
