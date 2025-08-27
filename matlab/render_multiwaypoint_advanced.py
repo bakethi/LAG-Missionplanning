@@ -189,119 +189,120 @@ class FlightDataCollector:
         """Create comprehensive flight visualization plots"""
         import matplotlib.pyplot as plt
         from mpl_toolkits.mplot3d import Axes3D
-        
+
         self.convert_to_numpy()
-        
+
         # Extract data
         north = self.position_data[:, 0]
         east = self.position_data[:, 1]
         up = self.position_data[:, 2]
-        
+
         vel_north = self.velocity_data[:, 0]
         vel_east = self.velocity_data[:, 1]
         vel_up = self.velocity_data[:, 2]
-        
+
         roll = self.attitude_data[:, 0]
         pitch = self.attitude_data[:, 1]
         yaw = self.attitude_data[:, 2]
-        
+
         # Calculate derived quantities
         ground_speed = np.sqrt(vel_north**2 + vel_east**2)
         total_speed = np.sqrt(vel_north**2 + vel_east**2 + vel_up**2)
         climb_rate = vel_up
-        
+
         # Create figure with subplots - now 2x3 grid
         fig = plt.figure(figsize=(18, 12))
         fig.suptitle('Advanced Flight Analysis Dashboard - Multiwaypoint Mission with Reward Metrics', fontsize=16, fontweight='bold')
-        
+
         # Get waypoint times for vertical lines
         waypoint_times = {}
         for wp_info in self.waypoint_data:
             stage = wp_info['task_stage']
             if stage > 0 and stage not in waypoint_times:  # Only actual waypoints
                 waypoint_times[stage] = wp_info['time']
-        
-        # 1. 3D Flight Path with Waypoints
+
+        # 1. 3D Flight Path with Waypoints (z-axis starts at 0)
         ax1 = fig.add_subplot(2, 3, 1, projection='3d')
         ax1.plot(north, east, up, 'b-', linewidth=2, label='Flight Path')
         ax1.scatter(north[0], east[0], up[0], c='green', s=100, marker='o', label='Start')
         ax1.scatter(north[-1], east[-1], up[-1], c='red', s=100, marker='o', label='End')
-        
+
         # Add waypoint markers (exclude starting point which is stage 0)
         waypoint_stages = {}
         for wp_info in self.waypoint_data:
             stage = wp_info['task_stage']
             if stage > 0 and stage not in waypoint_stages:  # Only actual waypoints
                 waypoint_stages[stage] = wp_info['step']
-        
+
         for stage, step in waypoint_stages.items():
             if step < len(north):
                 ax1.scatter(north[step], east[step], up[step], c='orange', s=60, marker='^', alpha=0.8)
-        
+
         ax1.set_xlabel('North (m)')
         ax1.set_ylabel('East (m)')
         ax1.set_zlabel('Up (m)')
+        ax1.set_zlim(0, np.max(up) * 1.05)
         ax1.set_title('3D Flight Path with Waypoints')
         ax1.legend()
         ax1.grid(True)
-        
+
         # 2. Distance to Waypoint over Time
         ax2 = fig.add_subplot(2, 3, 2)
         ax2.plot(self.time_data, self.distance_to_waypoint / 1000, 'r-', linewidth=2, label='Distance to Waypoint')
         ax2.axhline(y=0.75, color='g', linestyle='--', alpha=0.7, label='Success Radius (750m)')
-        
+
         # Add waypoint vertical lines
         for stage, wp_time in waypoint_times.items():
             ax2.axvline(x=wp_time, color='orange', linestyle='--', alpha=0.7, linewidth=1)
             ax2.text(wp_time, ax2.get_ylim()[1] * 0.9, f'WP{stage}', rotation=90, ha='right', va='top')
-        
+
         ax2.set_xlabel('Time (s)')
         ax2.set_ylabel('Distance (km)')
         ax2.set_title('Distance to Active Waypoint')
         ax2.legend()
         ax2.grid(True)
-        
+
         # 3. Yaw Difference and Alignment Score
         ax3 = fig.add_subplot(2, 3, 3)
         ax3_twin = ax3.twinx()
-        line1 = ax3.plot(self.time_data, self.yaw_difference * 180/np.pi, 'b-', linewidth=2, label='Yaw Difference')
-        line2 = ax3_twin.plot(self.time_data, self.alignment_score, 'g-', linewidth=2, label='Alignment Score')
-        
+        ax3.plot(self.time_data, self.yaw_difference * 180/np.pi, 'b-', linewidth=2, label='Yaw Difference')
+        ax3_twin.plot(self.time_data, self.alignment_score, 'g-', linewidth=2, label='Alignment Score')
+
         # Add waypoint vertical lines
         for stage, wp_time in waypoint_times.items():
             ax3.axvline(x=wp_time, color='orange', linestyle='--', alpha=0.7, linewidth=1)
             ax3.text(wp_time, ax3.get_ylim()[1] * 0.9, f'WP{stage}', rotation=90, ha='right', va='top')
-        
+
         ax3.set_xlabel('Time (s)')
         ax3.set_ylabel('Yaw Difference (degrees)', color='b')
         ax3_twin.set_ylabel('Alignment Score', color='g')
         ax3.set_title('Waypoint Alignment')
         ax3.axhline(y=0, color='b', linestyle='--', alpha=0.3)
         ax3.grid(True)
-        
+
         # 4. Attitude Details (Roll, Pitch, Yaw)
         ax4 = fig.add_subplot(2, 3, 4)
         ax4.plot(self.time_data, roll * 180/np.pi, 'r-', linewidth=2, label='Roll')
         ax4.plot(self.time_data, pitch * 180/np.pi, 'g-', linewidth=2, label='Pitch')
         ax4.plot(self.time_data, yaw * 180/np.pi, 'b-', linewidth=2, label='Yaw')
-        
+
         # Add waypoint vertical lines
         for stage, wp_time in waypoint_times.items():
             ax4.axvline(x=wp_time, color='orange', linestyle='--', alpha=0.7, linewidth=1)
             ax4.text(wp_time, ax4.get_ylim()[1] * 0.9, f'WP{stage}', rotation=90, ha='right', va='top')
-        
+
         ax4.set_xlabel('Time (s)')
         ax4.set_ylabel('Angle (degrees)')
         ax4.set_title('Aircraft Attitude')
         ax4.legend()
         ax4.grid(True)
-        
+
         # 5. Ground Track (Top View) with Waypoints
         ax5 = fig.add_subplot(2, 3, 5)
         ax5.plot(east, north, 'b-', linewidth=2, label='Flight Path')
         ax5.scatter(east[0], north[0], c='green', s=100, marker='o', label='Start')
         ax5.scatter(east[-1], north[-1], c='red', s=100, marker='o', label='End')
-        
+
         # Add waypoint markers to ground track
         waypoint_counter = 1
         for stage in sorted(waypoint_stages.keys()):
@@ -310,37 +311,37 @@ class FlightDataCollector:
                 ax5.scatter(east[step], north[step], c='orange', s=60, marker='^', alpha=0.8)
                 ax5.annotate(f'WP{waypoint_counter}', (east[step], north[step]), xytext=(5, 5), textcoords='offset points')
                 waypoint_counter += 1
-        
+
         ax5.set_xlabel('East (m)')
         ax5.set_ylabel('North (m)')
         ax5.set_title('Ground Track (Top View)')
         ax5.legend()
         ax5.grid(True)
         ax5.axis('equal')
-        
+
         # 6. Velocity and Performance
         ax6 = fig.add_subplot(2, 3, 6)
         ax6.plot(self.time_data, ground_speed, 'b-', linewidth=2, label='Ground Speed')
         ax6.plot(self.time_data, self.airspeed_data, 'r-', linewidth=2, label='Airspeed')
         ax6.plot(self.time_data, climb_rate, 'g-', linewidth=2, label='Climb Rate')
-        
+
         # Add waypoint vertical lines
         for stage, wp_time in waypoint_times.items():
             ax6.axvline(x=wp_time, color='orange', linestyle='--', alpha=0.7, linewidth=1)
             ax6.text(wp_time, ax6.get_ylim()[1] * 0.9, f'WP{stage}', rotation=90, ha='right', va='top')
-        
+
         ax6.set_xlabel('Time (s)')
         ax6.set_ylabel('Speed (m/s)')
         ax6.set_title('Velocity Components')
         ax6.legend()
         ax6.grid(True)
-        
+
         plt.tight_layout()
-        
+
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             print(f"Advanced plots saved to {save_path}")
-        
+
         plt.show()
     
     def print_mission_summary(self):
