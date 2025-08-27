@@ -145,6 +145,7 @@ dmypy.json
 # render folders
 renders/MultiWaypointEnv
 matlab/MultiWaypointEnv
+evaluation_outputs/
 
 # Local history for Visual Studio Code
 .history
