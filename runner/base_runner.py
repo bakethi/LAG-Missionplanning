@@ -19,6 +19,7 @@ class Runner(object):
         self.eval_envs = config['eval_envs']
         self.device = config['device']
         self.render_mode = config['render_mode']
+        self.writer = config.get("writer", None)
         
         # Tacview render obj
         self.tacview = None
@@ -121,9 +122,13 @@ class Runner(object):
     def log_info(self, infos, total_num_steps):
         if self.use_wandb:
             for k, v in infos.items():
-                wandb.log({k: v}, step=total_num_steps)
-        else:
-            pass
+                if isinstance(v, (int, float, np.number)):
+                    wandb.log({k: v}, step=total_num_steps)
+
+        if self.writer is not None:
+            for k, v in infos.items():
+                if isinstance(v, (int, float, np.number)):
+                    self.writer.add_scalar(k, v, total_num_steps)
         
     def render_with_tacview(self, data):
         """

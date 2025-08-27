@@ -16,6 +16,7 @@ from runner.share_jsbsim_runner import ShareJSBSimRunner
 from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv, WaypointEnv, ReachBaseEnv, MultiWaypointEnv
 from envs.env_wrappers import SubprocVecEnv, DummyVecEnv, ShareSubprocVecEnv, ShareDummyVecEnv
 from runner.tacview import Tacview
+from torch.utils.tensorboard import SummaryWriter
 
 def make_train_env(all_args):
     def get_env_fn(rank):
@@ -146,6 +147,8 @@ def main(args):
         if not run_dir.exists():
             os.makedirs(str(run_dir))
 
+    writer = SummaryWriter(log_dir=str(run_dir / "tensorboard"))
+
     setproctitle.setproctitle(str(all_args.algorithm_name) + "-" + str(all_args.env_name)
                               + "-" + str(all_args.experiment_name) + "@" + str(all_args.user_name))
 
@@ -162,7 +165,8 @@ def main(args):
         "device": device,
         "run_dir": run_dir,
         "latest_run_dir": latest_run_dir,
-        "render_mode": render_mode
+        "render_mode": render_mode,
+        "writer": writer
     }
 
     # run experiments
@@ -184,6 +188,9 @@ def main(args):
 
         if all_args.use_wandb:
             run.finish()
+
+        if writer is not None:
+            writer.close()
 
 
 if __name__ == "__main__":
