@@ -35,23 +35,21 @@ class MultiWaypointTask(BaseTask):
         return 1
 
     def load_variables(self):
+        # Only include used state variables
         self.state_var = [
-            c.delta_altitude,                   # 0. delta_h   (unit: m) <- not used
-            c.delta_heading,                    # 1. delta_heading  (unit: °) <- not used
-            c.delta_velocities_u,               # 2. delta_v   (unit: m/s) <- not used
-            c.position_h_sl_m,                  # 3. altitude  (unit: m)
-            c.attitude_roll_rad,                # 4. roll      (unit: rad)
-            c.attitude_pitch_rad,               # 5. pitch     (unit: rad)
-            c.velocities_u_mps,                 # 6. v_body_x   (unit: m/s)
-            c.velocities_v_mps,                 # 7. v_body_y   (unit: m/s)
-            c.velocities_w_mps,                 # 8. v_body_z   (unit: m/s)
-            c.velocities_vc_mps,                # 9. vc        (unit: m/s)
+            c.position_h_sl_m,          # 0. altitude (unit: m)
+            c.attitude_roll_rad,        # 1. roll (unit: rad)
+            c.attitude_pitch_rad,       # 2. pitch (unit: rad)
+            c.velocities_u_mps,         # 3. v_body_x (unit: m/s)
+            c.velocities_v_mps,         # 4. v_body_y (unit: m/s)
+            c.velocities_w_mps,         # 5. v_body_z (unit: m/s)
+            c.velocities_vc_mps,        # 6. vc (unit: m/s)
         ]
         self.action_var = [
-            c.fcs_aileron_cmd_norm,             # [-1., 1.]
-            c.fcs_elevator_cmd_norm,            # [-1., 1.]
-            c.fcs_rudder_cmd_norm,              # [-1., 1.]
-            c.fcs_throttle_cmd_norm,            # [0.4, 0.9]
+            c.fcs_aileron_cmd_norm,     # [-1., 1.]
+            c.fcs_elevator_cmd_norm,    # [-1., 1.]
+            c.fcs_rudder_cmd_norm,      # [-1., 1.]
+            c.fcs_throttle_cmd_norm,    # [0.4, 0.9]
         ]
         self.render_var = [
             c.position_long_gc_deg,
@@ -63,7 +61,7 @@ class MultiWaypointTask(BaseTask):
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(14,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(11,))
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle
@@ -73,43 +71,37 @@ class MultiWaypointTask(BaseTask):
         """
         Convert simulation states into the format of observation_space.
 
-        Observation (dim 14):
-            0. delta altitude (km)
-            1. delta heading (rad)
-            2. delta velocities_u (mach)
-            3. altitude (5km)
-            4. roll_sin
-            5. roll_cos
-            6. pitch_sin
-            7. pitch_cos
-            8. v_body_x (mach)
-            9. v_body_y (mach)
-            10. v_body_z (mach)
-            11. vc (mach)
-            12. distance to current waypoint (normalized)
-            13. alignment to current waypoint (rad)
+        Observation (dim 11):
+            0. altitude (5km)
+            1. roll_sin
+            2. roll_cos
+            3. pitch_sin
+            4. pitch_cos
+            5. v_body_x (mach)
+            6. v_body_y (mach)
+            7. v_body_z (mach)
+            8. vc (mach)
+            9. distance to current waypoint (normalized)
+            10. alignment to current waypoint (rad)
         """
         obs = np.array(env.agents[agent_id].get_property_values(self.state_var))
-        norm_obs = np.zeros(14)
+        norm_obs = np.zeros(11)
 
-        norm_obs[0] = obs[0] / 1000         # delta altitude (km) <- not used
-        norm_obs[1] = obs[1] / 180 * np.pi  # delta heading (rad) <- not used
-        norm_obs[2] = obs[2] / 340          # delta velocities_u (mach) <- not used
-        norm_obs[3] = obs[3] / 5000         # altitude (5km)
-        norm_obs[4] = np.sin(obs[4])        # roll_sin
-        norm_obs[5] = np.cos(obs[4])        # roll_cos
-        norm_obs[6] = np.sin(obs[5])        # pitch_sin
-        norm_obs[7] = np.cos(obs[5])        # pitch_cos
-        norm_obs[8] = obs[6] / 340          # v_body_x (mach)
-        norm_obs[9] = obs[7] / 340          # v_body_y (mach)
-        norm_obs[10] = obs[8] / 340         # v_body_z (mach)
-        norm_obs[11] = obs[9] / 340         # vc (mach)
+        norm_obs[0] = obs[0] / 5000         # altitude (5km)
+        norm_obs[1] = np.sin(obs[1])        # roll_sin
+        norm_obs[2] = np.cos(obs[1])        # roll_cos
+        norm_obs[3] = np.sin(obs[2])        # pitch_sin
+        norm_obs[4] = np.cos(obs[2])        # pitch_cos
+        norm_obs[5] = obs[3] / 340          # v_body_x (mach)
+        norm_obs[6] = obs[4] / 340          # v_body_y (mach)
+        norm_obs[7] = obs[5] / 340          # v_body_z (mach)
+        norm_obs[8] = obs[6] / 340          # vc (mach)
 
         # Waypoint metrics
         distance = env.compute_distance_to_waypoint(agent_id)
         alignment = env.get_alignment_to_waypoint(agent_id)
-        norm_obs[12] = distance / 141000     # battlefield diagonal normalization
-        norm_obs[13] = alignment            # radians
+        norm_obs[9] = distance / 141000     # battlefield diagonal normalization
+        norm_obs[10] = alignment            # radians
 
         return np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
     
