@@ -38,9 +38,10 @@ class PPOActor(nn.Module):
         rnn_states = check(rnn_states).to(**self.tpdv)
         masks = check(masks).to(**self.tpdv)
         if self.use_prior:
-            # prior knowledage for controling shoot missile
-            attack_angle = torch.rad2deg(obs[:, 11]) # unit degree
-            distance = obs[:, 11] * 10000 # unit m
+            # prior knowledge for controlling shoot missile
+            # obs[:, 9] is normalized distance to waypoint (0~1), obs[:, 10] is alignment (rad)
+            distance = obs[:, 9] * 141000  # battlefield diagonal normalization (meters)
+            attack_angle = torch.rad2deg(obs[:, 10]) # alignment in degrees
             alpha0 = torch.full(size=(obs.shape[0],1), fill_value=3).to(**self.tpdv)
             beta0 = torch.full(size=(obs.shape[0],1), fill_value=10).to(**self.tpdv)
             alpha0[distance<=12000] = 6
@@ -66,9 +67,9 @@ class PPOActor(nn.Module):
         action = check(action).to(**self.tpdv)
         masks = check(masks).to(**self.tpdv)
         if self.use_prior:
-            # prior knowledage for controling shoot missile
-            attack_angle = torch.rad2deg(obs[:, 11]) # unit degree
-            distance = obs[:, 13] * 10000 # unit m
+            # prior knowledge for controlling shoot missile
+            distance = obs[:, 9] * 141000  # battlefield diagonal normalization (meters)
+            attack_angle = torch.rad2deg(obs[:, 10]) # alignment in degrees
             alpha0 = torch.full(size=(obs.shape[0], 1), fill_value=3).to(**self.tpdv)
             beta0 = torch.full(size=(obs.shape[0], 1), fill_value=10).to(**self.tpdv)
             alpha0[distance<=12000] = 6

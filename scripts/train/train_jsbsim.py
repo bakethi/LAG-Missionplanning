@@ -13,9 +13,10 @@ import setproctitle
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 from config import get_config
 from runner.share_jsbsim_runner import ShareJSBSimRunner
-from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv
+from envs.JSBSim.envs import SingleCombatEnv, SingleControlEnv, MultipleCombatEnv, WaypointEnv, ReachBaseEnv, MultiWaypointEnv
 from envs.env_wrappers import SubprocVecEnv, DummyVecEnv, ShareSubprocVecEnv, ShareDummyVecEnv
 from runner.tacview import Tacview
+from torch.utils.tensorboard import SummaryWriter
 
 def make_train_env(all_args):
     def get_env_fn(rank):
@@ -26,6 +27,12 @@ def make_train_env(all_args):
                 env = SingleControlEnv(all_args.scenario_name)
             elif all_args.env_name == "MultipleCombat":
                 env = MultipleCombatEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachWaypoint":
+                env = WaypointEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachBase":
+                env = ReachBaseEnv(all_args.scenario_name)
+            elif all_args.env_name == "MultiWaypoint":
+                env = MultiWaypointEnv(all_args.scenario_name)
             else:
                 logging.error("Can not support the " + all_args.env_name + "environment.")
                 raise NotImplementedError
@@ -53,6 +60,10 @@ def make_eval_env(all_args):
                 env = SingleControlEnv(all_args.scenario_name)
             elif all_args.env_name == "MultipleCombat":
                 env = MultipleCombatEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachWaypoint":
+                env = WaypointEnv(all_args.scenario_name)
+            elif all_args.env_name == "ReachBase":
+                env = ReachBaseEnv(all_args.scenario_name)
             else:
                 logging.error("Can not support the " + all_args.env_name + "environment.")
                 raise NotImplementedError
@@ -136,6 +147,8 @@ def main(args):
         if not run_dir.exists():
             os.makedirs(str(run_dir))
 
+    writer = SummaryWriter(log_dir=str(run_dir / "tensorboard"))
+
     setproctitle.setproctitle(str(all_args.algorithm_name) + "-" + str(all_args.env_name)
                               + "-" + str(all_args.experiment_name) + "@" + str(all_args.user_name))
 
@@ -152,7 +165,8 @@ def main(args):
         "device": device,
         "run_dir": run_dir,
         "latest_run_dir": latest_run_dir,
-        "render_mode": render_mode
+        "render_mode": render_mode,
+        "writer": writer
     }
 
     # run experiments
@@ -175,7 +189,33 @@ def main(args):
         if all_args.use_wandb:
             run.finish()
 
+        if writer is not None:
+            writer.close()
+
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    
+    log_file_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "training.log"
+    )
+
+    file_handler = logging.FileHandler(log_file_path, mode='w')
+    stream_handler = logging.StreamHandler(sys.stdout)
+
+    file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    stream_formatter = logging.Formatter("%(message)s")
+
+    file_handler.setFormatter(file_formatter)
+    stream_handler.setFormatter(stream_formatter)
+
+    # Set up logging
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    logger.handlers = []
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+
     main(sys.argv[1:])

@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from typing import List
 from .base_runner import Runner, ReplayBuffer
+from tqdm import trange, tqdm
 
 
 def _t2n(x):
@@ -40,62 +41,61 @@ class JSBSimRunner(Runner):
         self.total_num_steps = 0
         episodes = self.num_env_steps // self.buffer_size // self.n_rollout_threads
 
-        for episode in range(episodes):
+        pbar = trange(episodes, desc="Training", dynamic_ncols=True)
 
+        for episode in pbar:
             heading_turns_list = []
 
             for step in range(self.buffer_size):
-                # Sample actions
                 values, actions, action_log_probs, rnn_states_actor, rnn_states_critic = self.collect(step)
-
-                # Obser reward and next obs
                 obs, rewards, dones, infos = self.envs.step(actions)
 
-                # Extra recorded information
                 for info in infos:
                     if 'heading_turn_counts' in info:
                         heading_turns_list.append(info['heading_turn_counts'])
 
                 data = obs, actions, rewards, dones, action_log_probs, values, rnn_states_actor, rnn_states_critic
-
-                # insert data into buffer
                 self.insert(data)
 
-            # compute return and update network
             self.compute()
             train_infos = self.train()
 
-            # post process
             self.total_num_steps = (episode + 1) * self.buffer_size * self.n_rollout_threads
 
-            # log information
-            if episode % self.log_interval == 0:
+            if episode % self.log_interval == 0 or episode == episodes - 1:
                 end = time.time()
-                logging.info("\n Scenario {} Algo {} Exp {} updates {}/{} episodes, total num timesteps {}/{}, FPS {}.\n"
-                             .format(self.all_args.scenario_name,
-                                     self.algorithm_name,
-                                     self.experiment_name,
-                                     episode,
-                                     episodes,
-                                     self.total_num_steps,
-                                     self.num_env_steps,
-                                     int(self.total_num_steps / (end - start))))
+                fps = int(self.total_num_steps / (end - start))
+                avg_reward = self.buffer.rewards.sum() / (self.buffer.masks == False).sum()
 
-                train_infos["average_episode_rewards"] = self.buffer.rewards.sum() / (self.buffer.masks == False).sum()
-                logging.info("average episode rewards is {}".format(train_infos["average_episode_rewards"]))
+                train_infos["average_episode_rewards"] = avg_reward
 
-                if len(heading_turns_list):
-                    train_infos["average_heading_turns"] = np.mean(heading_turns_list)
-                    logging.info("average heading turns is {}".format(train_infos["average_heading_turns"]))
+                if heading_turns_list:
+                    avg_turns = np.mean(heading_turns_list)
+                    train_infos["average_heading_turns"] = avg_turns
+                    pbar.set_postfix({
+                        "Steps": f"{self.total_num_steps:,}",
+                        "FPS": fps,
+                        "AvgR": f"{avg_reward:.1f}",
+                        "Turns": f"{avg_turns:.2f}"
+                    })
+                else:
+                    pbar.set_postfix({
+                        "Steps": f"{self.total_num_steps:,}",
+                        "FPS": fps,
+                        "AvgR": f"{avg_reward:.1f}"
+                    })
+
                 self.log_info(train_infos, self.total_num_steps)
 
-            # eval
             if episode % self.eval_interval == 0 and episode != 0 and self.use_eval:
-                    self.eval(self.total_num_steps)
+                self.eval(self.total_num_steps)
 
-            # save model
             if (episode % self.save_interval == 0) or (episode == episodes - 1):
                 self.save(episode)
+
+        tqdm.write(f"✅ Final average reward: {train_infos['average_episode_rewards']:.2f}, Total Steps: {self.total_num_steps}")
+
+
 
     def warmup(self):
         # reset env
@@ -163,12 +163,8 @@ class JSBSimRunner(Runner):
                     log_msg = sim.log()
                     if log_msg is not None:
                         render_data.append(log_msg + "\n")
-
                 render_data_str = "".join(render_data)
-                try:
-                    self.tacview.send_data_to_client(render_data_str)
-                except Exception as e:
-                    logging.error(f"Tacview rendering error: {e}")
+                self.render_with_tacview(render_data_str)
                     
             self.timestamp += 0.2   # step 0.2s
             eval_cumulative_rewards += eval_rewards

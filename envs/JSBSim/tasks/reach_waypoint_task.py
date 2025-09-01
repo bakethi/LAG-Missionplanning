@@ -2,13 +2,13 @@ import numpy as np
 from gymnasium import spaces
 from .task_base import BaseTask
 from ..core.catalog import Catalog as c
-from ..reward_functions import AltitudeReward, HeadingReward
-from ..reward_functions import ProximityToAirbaseReward
-from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout, UnreachHeading
-from ..termination_conditions import AirBaseDestroyedTermination, AgentTooFar 
+from ..reward_functions import AltitudeReward, AttitudeReward
+from ..reward_functions import DistanceToWaypointReward
+from ..termination_conditions import ExtremeState, LowAltitude, Overload, Timeout
+from ..termination_conditions import AgentTooFar , UnreachWaypoint
 
 
-class HeadingTask(BaseTask):
+class ReachWaypointTask(BaseTask):
     '''
     Control target heading with discrete action space
     '''
@@ -16,17 +16,18 @@ class HeadingTask(BaseTask):
         super().__init__(config)
 
         self.reward_functions = [
-            HeadingReward(self.config),
             AltitudeReward(self.config),
-            ProximityToAirbaseReward(self.config),
+            DistanceToWaypointReward(self.config),
+            AttitudeReward(self.config),
         ]
         self.termination_conditions = [
-            UnreachHeading(self.config),
+            #UnreachHeading(self.config),
             ExtremeState(self.config),
             Overload(self.config),
-            LowAltitude(self.config),
-            AirBaseDestroyedTermination(self.config), 
+            LowAltitude(self.config), 
             AgentTooFar(self.config),
+            Timeout(self.config),
+            UnreachWaypoint(self.config),
         ]
 
     @property
@@ -62,7 +63,7 @@ class HeadingTask(BaseTask):
         ]
 
     def load_observation_space(self):
-        self.observation_space = spaces.Box(low=-10, high=10., shape=(12,))
+        self.observation_space = spaces.Box(low=-10, high=10., shape=(14,))
 
     def load_action_space(self):
         # aileron, elevator, rudder, throttle
@@ -87,7 +88,7 @@ class HeadingTask(BaseTask):
             11. ego_vc                 (unit: mh)
         """
         obs = np.array(env.agents[agent_id].get_property_values(self.state_var))
-        norm_obs = np.zeros(12)
+        norm_obs = np.zeros(14)
         norm_obs[0] = obs[0] / 1000         # 0. ego delta altitude (unit: 1km)
         norm_obs[1] = obs[1] / 180 * np.pi  # 1. ego delta heading  (unit rad)
         norm_obs[2] = obs[2] / 340          # 2. ego delta velocities_u (unit: mh)
@@ -100,9 +101,16 @@ class HeadingTask(BaseTask):
         norm_obs[9] = obs[7] / 340          # 9. ego_v_east     (unit: mh)
         norm_obs[10] = obs[8] / 340         # 10. ego_v_down    (unit: mh)
         norm_obs[11] = obs[9] / 340         # 11. ego_vc        (unit: mh)
+
+        distance = env.compute_distance_to_waypoint(agent_id)
+        alignment = env.get_alignment_to_waypoint(agent_id)
+        norm_obs[12] = distance / 70710  # 12. distance to waypoint (normalized by battlefield diagonal)
+        norm_obs[13] = alignment  # 13. angle to waypoint (unit: rad)
+
         norm_obs = np.clip(norm_obs, self.observation_space.low, self.observation_space.high)
         return norm_obs
-
+    
+    
     def normalize_action(self, env, agent_id, action):
         """Convert discrete action index into continuous value.
         """

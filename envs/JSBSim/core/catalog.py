@@ -415,6 +415,96 @@ class ExtraCatalog(Property, Enum):
             extreme_altitude or extreme_rotation or extreme_velocity or extreme_acceleration,
         )
 
+    def update_enemy_base_state(sim):
+        """
+        Update the enemy base state based on its destruction status.
+        """
+        if sim.get_property_value(JsbsimCatalog.position_h_sl_ft) < 0:
+            sim.set_property_value(ExtraCatalog.detect_enemy_base_state, 1)
+
+    def find_distance_to_base(sim):
+        """
+        Check if the agent is too far from the target and update the state accordingly.
+        """
+        target_lat = sim.get_property_value(ExtraCatalog.enemy_base_latitude_geod_deg)
+        target_lon = sim.get_property_value(ExtraCatalog.enemy_base_longitude_geod_deg)
+        agent_lat = sim.get_property_value(JsbsimCatalog.position_lat_geod_deg)
+        agent_lon = sim.get_property_value(JsbsimCatalog.position_long_gc_deg)
+
+        # Haversine formula for distance in meters
+        R = 6371000  # Earth radius in meters
+        phi1 = math.radians(agent_lat)
+        phi2 = math.radians(target_lat)
+        dphi = math.radians(target_lat - agent_lat)
+        dlambda = math.radians(target_lon - agent_lon)
+        a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        distance = R * c
+
+        return distance
+
+            
+    def update_agent_reached_base_state(sim):
+        """
+        Check if the agent has reached the waypoint and update the state accordingly.
+        """ 
+        success_radius = 750  # meters
+        distance = ExtraCatalog.find_distance_to_base(sim)
+        if distance < success_radius:
+            sim.set_property_value(ExtraCatalog.detect_agent_reached_base_state, 1)
+    
+    
+    def update_agent_too_far_base_state(sim):
+        """
+        Check if the agent is too far from the base and update the state accordingly.
+        """
+        distance = ExtraCatalog.find_distance_to_base(sim)
+        if distance > 100000:
+            sim.set_property_value(ExtraCatalog.detect_agent_too_far_base_state, 1)
+
+
+    def update_agent_reached_waypoint_state(sim):
+        """
+        Check if the agent has reached the waypoint and update the state accordingly.
+        """ 
+        success_radius = 750  # meters
+        distance = ExtraCatalog.find_distance_to_waypoint(sim)
+        if distance < success_radius:
+            sim.set_property_value(ExtraCatalog.detect_agent_reached_waypoint_state, 1)
+
+    def update_agent_too_far_waypoint_state(sim):
+        """
+        Check if the agent is too far from the waypoint and update the state accordingly.
+        """
+        distance = ExtraCatalog.find_distance_to_waypoint(sim)
+        if distance > 141000:
+            sim.set_property_value(ExtraCatalog.detect_agent_too_far_waypoint_state, 1)
+
+
+    def find_distance_to_waypoint(sim):
+        """
+        Calculate the great-circle distance (in meters) between the aircraft and the waypoint.
+        Uses the haversine formula.
+        """
+        # Extract lat/lon in degrees
+        agent_lat = sim.get_property_value(JsbsimCatalog.position_lat_geod_deg)
+        agent_lon = sim.get_property_value(JsbsimCatalog.position_long_gc_deg)
+        wp_lat = sim.get_property_value(ExtraCatalog.waypoint_latitude_geod_deg)
+        wp_lon = sim.get_property_value(ExtraCatalog.waypoint_longitude_geod_deg)
+        
+        # Convert to radians
+        phi1 = math.radians(agent_lat)
+        phi2 = math.radians(wp_lat)
+        dphi = math.radians(wp_lat - agent_lat)
+        dlambda = math.radians(wp_lon - agent_lon)
+
+        # Haversine formula
+        a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        R = 6371000  # Earth radius in meters
+        distance = R * c
+        return distance
+
     # position and attitude
 
     delta_altitude = Property(
@@ -484,6 +574,78 @@ class ExtraCatalog(Property, Enum):
     )
     incr_rudder = Property("fcs/incr-rudder", "incrementation rudder", 0, 1)
 
+    #enemy base 
+    enemy_base_latitude_geod_deg = Property(
+        "enemy_base/latitude-geod-deg", "enemy base geocentric latitude [deg]", -90, 90
+    )
+    enemy_base_longitude_geod_deg = Property(
+        "enemy_base/longitude-geod-deg", "enemy base geocentric longitude [deg]", -180, 180
+    )
+    enemy_base_altitude_ft = Property(
+        "enemy_base/altitude-ft", "enemy base altitude MSL [ft]", JsbsimCatalog.position_h_sl_ft.min, JsbsimCatalog.position_h_sl_ft.max
+    )
+    detect_enemy_base_state = Property(
+        "enemy_base/state",
+        "enemy base state (0 - not destroyed, 1 - destroyed)",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_enemy_base_state,
+    )
+
+    waypoint_latitude_geod_deg = Property(
+        "waypoint/latitude-geod-deg", "waypoint geocentric latitude [deg]", -90, 90
+    )
+    waypoint_longitude_geod_deg = Property(
+        "waypoint/longitude-geod-deg", "waypoint geocentric longitude [deg]", -180, 180
+    )
+    waypoint_altitude_ft = Property(
+        "waypoint/altitude-ft", "waypoint altitude MSL [ft]", JsbsimCatalog.position_h_sl_ft.min, JsbsimCatalog.position_h_sl_ft.max
+    )
+
+
+
+    detect_agent_too_far_base_state = Property(
+        "detect/agent-too-far-state",
+        "detect agent too far from the target",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_agent_too_far_base_state,
+    )
+    
+    detect_agent_reached_base_state = Property(
+        "detect/agent-reached-base-state",
+        "detect agent reached enemy base",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_enemy_base_state,
+    )
+
+    detect_agent_reached_waypoint_state = Property(
+        "detect/agent-reached-waypoint-state",
+        "detect agent reached waypoint",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_agent_reached_waypoint_state,
+    )
+
+    detect_agent_too_far_waypoint_state = Property(
+        "detect/agent-too-far-waypoint-state",
+        "detect agent too far from waypoint",
+        0,
+        1,
+        spaces=Discrete,
+        access="R",
+        update=update_agent_too_far_waypoint_state,
+    )
+
     # detect functions
 
     detect_extreme_state = Property(
@@ -552,8 +714,17 @@ class MixedCatalog(dict):
         for jsbsim_prop in jsbsim_props:
             if jsbsim_prop.strip() == "":
                 continue  # skip empty line
-            [name_jsbsim, access] = jsbsim_prop.split(" ")
-            access = re.sub(r"[\(\)]", "", access)  # remove parenthesis from the flag
+            
+            # Handle cases where property doesn't have access info
+            parts = jsbsim_prop.split(" ")
+            if len(parts) < 2:
+                # If no access info, assume read-only
+                name_jsbsim = parts[0]
+                access = "R"
+            else:
+                name_jsbsim, access = parts[0], parts[1]
+                access = re.sub(r"[\(\)]", "", access)  # remove parenthesis from the flag
+            
             name = re.sub(r"_$", "", re.sub(r"[\-/\]\[]+", "_", name_jsbsim))  # get property name from jsbsim name
             if name not in self:
                 assert name not in ExtraCatalog.__members__, \

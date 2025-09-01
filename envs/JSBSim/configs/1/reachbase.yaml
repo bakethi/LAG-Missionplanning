@@ -1,0 +1,136 @@
+# task config
+task: reachbase
+
+# simulation config
+sim_freq: 60
+agent_interaction_steps: 12 # step 0.2s
+
+# termination config
+max_steps: 2000             # episode length: 400s
+altitude_limit: 2500
+acceleration_limit_x: 10.0
+acceleration_limit_y: 10.0
+acceleration_limit_z: 10.0
+
+# aircraft config
+aircraft_configs: {
+  A0100: {
+    color: Red,
+    model: f16,
+    max_heading_increment: 180,       # degree
+    max_altitude_increment: 7000,     # feet
+    max_velocities_u_increment: 100,  # meter
+    check_interval: 30,               # second
+    init_state: {
+      ic_long_gc_deg: 120.0,
+      ic_lat_geod_deg: 60.0,
+      ic_h_sl_ft: 20000,
+      ic_psi_true_deg: 0.0,
+      ic_u_fps: 800.0,
+    }
+  }
+}
+
+# enemy base config 
+static_base_configs: {
+  1000000011: {
+    color: Red,
+    type: Ground+Static+Building,
+    model: Gas Platform,
+    init_state: {
+      enemy_base/longitude-geod-deg: 119.25,
+      enemy_base/latitude-geod-deg: 59.65,
+      enemy_base/altitude-ft: 2500,
+    },
+  },
+  # 1000000012: {
+  #   color: Green,
+  #   type: Ground+Static+Building,
+  #   model: Gas Platform,
+  #   init_state: {
+  #     enemy_base/longitude-geod-deg: 120.80,
+  #     enemy_base/latitude-geod-deg: 60.38,
+  #     enemy_base/altitude-ft: 2500,
+  #   },
+  # }
+}
+
+# success radius
+success_radius: 750  # m
+
+# waypoint config
+waypoint_configs: {
+  100000001: {
+    color: Green,
+    type: Navaid+Static+Waypoint,
+    model: Waypoint,
+    init_state: {
+      waypoint/longitude-geod-deg: 120.0,
+      waypoint/latitude-geod-deg: 59.6,
+      waypoint/altitude-ft: 4000,
+      waypoint/active: 0,
+    },
+  },
+  # 100000002: {
+  #   color: Red,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 119.5,
+  #     waypoint/latitude-geod-deg: 59.8,
+  #     waypoint/altitude-ft: 2500,
+  #     waypoint/active: 0,
+  #   },
+  # },
+  # 100000003: {
+  #   color: Blue,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 120.5,
+  #     waypoint/latitude-geod-deg: 60.2,
+  #     waypoint/altitude-ft: 3200,
+  #     waypoint/active: 0,
+  #   },
+  # },
+  # 100000004: {
+  #   color: Green,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 120.7,
+  #     waypoint/latitude-geod-deg: 59.9,
+  #     waypoint/altitude-ft: 1800,
+  #     waypoint/active: 0,
+  #   },
+  # },
+  # 100000005: {
+  #   color: Red,
+  #   type: Navaid+Static+Waypoint,
+  #   model: Waypoint,
+  #   init_state: {
+  #     waypoint/longitude-geod-deg: 119.9,
+  #     waypoint/latitude-geod-deg: 60.3,
+  #     waypoint/altitude-ft: 2700,
+  #     waypoint/active: 0,
+  #   },
+  # },
+}
+
+
+# (longitude, latitude, altitude)
+battle_field_center: [120.0, 60.0, 0.0]
+
+# battle field corners
+corners_coordinates: [
+  [119.1015, 59.5505, 0.0],
+  [120.8985, 59.5505, 0.0],
+  [120.8985, 60.4495, 0.0],
+  [119.1015, 60.4495, 0.0]
+]
+## --> this is about a 50km x 50km area
+
+# reward config
+AltitudeReward_safe_altitude: 4.0
+AltitudeReward_danger_altitude: 3.5
+AltitudeReward_Kv: 0.2

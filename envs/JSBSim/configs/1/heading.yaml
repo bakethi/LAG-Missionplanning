@@ -38,10 +38,10 @@ static_base_configs: {
     type: Ground+Static+Building,
     model: Gas Platform,
     init_state: {
-      ic_long_gc_deg: 120.5,
-      ic_lat_geod_deg: 60.5,
-      ic_h_sl_ft: 2500,
-    }
+      enemy_base/longitude-geod-deg: 120.5,
+      enemy_base/latitude-geod-deg: 60.5,
+      enemy_base/altitude-ft: 2500,
+    },
   }
 }
 

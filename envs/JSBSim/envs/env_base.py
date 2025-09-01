@@ -3,8 +3,9 @@ import time
 import gymnasium
 from gymnasium.utils import seeding
 import numpy as np
+from datetime import datetime
 from typing import Dict, Any, Tuple
-from ..core.simulatior import AircraftSimulator, BaseSimulator, StaticSimulator
+from ..core.simulatior import AircraftSimulator, BaseSimulator, StaticSimulator, WaypointSimulator
 from ..tasks.task_base import BaseTask
 from ..utils.utils import parse_config
 
@@ -51,6 +52,10 @@ class BaseEnv(gymnasium.Env):
     @property
     def static_bases(self) -> Dict[str, StaticSimulator]:
         return self._static_sims
+    
+    @property
+    def waypoints(self) -> Dict[str, WaypointSimulator]:
+        return self._waypoint_sims
 
     @property
     def time_interval(self) -> int:
@@ -68,6 +73,7 @@ class BaseEnv(gymnasium.Env):
         # Separate dictionaries for aircraft and static sims
         self._aircraft_sims = {}  # type: Dict[str, AircraftSimulator]
         self._static_sims = {}    # type: Dict[str, StaticSimulator]
+        self._waypoint_sims = {}  # type: Dict[str, WaypointSimulator]
 
         # Load aircraft agents
         for uid, config in self.config.aircraft_configs.items():
@@ -81,19 +87,32 @@ class BaseEnv(gymnasium.Env):
                 num_missiles=config.get("missile", 0)
             )
 
-        # Load static base objects
-        for uid, config in self.config.static_base_configs.items():
-            self._static_sims[uid] = StaticSimulator(
+        # # Load static base objects
+        # for uid, config in self.config.static_base_configs.items():
+        #     self._static_sims[uid] = StaticSimulator(
+        #         uid=uid,
+        #         color=config.get("color", "Blue"),
+        #         model=config.get("model", "Gas Platform"),
+        #         type=config.get("type", "Ground+Static+Building"),
+        #         active=config.get("active", False),
+        #         init_state=config.get("init_state"),
+        #         origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
+        #     )
+
+        #load waypoints
+        for uid, config in self.config.waypoint_configs.items():    
+            self._waypoint_sims[uid] = WaypointSimulator(
                 uid=uid,
-                color=config.get("color", "Blue"),
-                model=config.get("model", "Gas Platform"),
-                type=config.get("type", "Ground+Static+Building"),
+                color=config.get("color", "Green"),
+                model=config.get("model", "Waypoint"),
+                type=config.get("type", "Navaid+Static+Waypoint"),
+                active=config.get("active", False),
                 init_state=config.get("init_state"),
                 origin=getattr(self.config, 'battle_field_center', (120.0, 60.0, 0.0)),
             )
 
         # Merge both for rendering/logging
-        self._jsbsims = {**self._aircraft_sims, **self._static_sims}
+        self._jsbsims = {**self._aircraft_sims, **self._waypoint_sims}
 
         # Determine ego/enemy IDs (only among aircraft)
         _default_team_uid = list(self._aircraft_sims.keys())[0][0]
@@ -154,7 +173,7 @@ class BaseEnv(gymnasium.Env):
         for agent_id in self.agents.keys():
             a_action = self.task.normalize_action(self, agent_id, action[agent_id])
             # 在 normalize_action 之后打印 a_action 的值
-            logging.debug(f"a_action: {a_action}")
+            #logging.debug(f"a_action: {a_action}")
             self.agents[agent_id].set_property_values(self.task.action_var, a_action)
         # run simulation
         for _ in range(self.agent_interaction_steps):
@@ -168,7 +187,7 @@ class BaseEnv(gymnasium.Env):
 
         dones = {}
         for agent_id in self.agents.keys():
-            done, info = self.task.get_termination(self, agent_id, info)
+            done, sucess, info = self.task.get_termination(self, agent_id, info)
             dones[agent_id] = [done]
 
         rewards = {}
@@ -232,7 +251,7 @@ class BaseEnv(gymnasium.Env):
                 with open(filepath, mode='w', encoding='utf-8-sig') as f:
                     f.write("FileType=text/acmi/tacview\n")
                     f.write("FileVersion=2.1\n")
-                    f.write("0,ReferenceTime=2020-04-01T00:00:00Z\n")
+                    f.write(f"0,ReferenceTime={datetime.today().strftime('%Y-%m-%d')}T00:00:00Z\n")
                 self._create_records = True
             with open(filepath, mode='a', encoding='utf-8-sig') as f:
                 timestamp = self.current_step * self.time_interval
