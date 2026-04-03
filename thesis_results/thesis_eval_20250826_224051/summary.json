@@ -1,0 +1,11 @@
+{
+  "episodes": 25,
+  "target_waypoints": 100,
+  "success_rate": 0.0,
+  "avg_reward": 57287.46161471706,
+  "avg_distance_m": 5748475.291507277,
+  "avg_distance_ratio": 1.0357657426159061,
+  "avg_completion_time_s": null,
+  "avg_steps": 114816.72,
+  "success_radius_m": 750.0
+}
